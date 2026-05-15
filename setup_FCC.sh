@@ -21,3 +21,4 @@ cd ../
 
 # Set LOCAL_DIR to the directory of this script
 export LOCAL_DIR=$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)
+export PYTHONPATH=${LOCAL_DIR}/python:${PYTHONPATH}

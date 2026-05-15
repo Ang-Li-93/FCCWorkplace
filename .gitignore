@@ -80,3 +80,24 @@ build/
 run/
 build/
 out/
+
+# HEP data files #
+##################
+*.root
+*.stdhep
+*.hepmc
+*.lhe
+
+# FCC analysis generated outputs #
+###################################
+BatchOutputs/
+outputs_*/
+XSEC/
+Compare/
+wzp6vsp8/
+test/
+analysis/test/
+
+# Kerberos / credentials #
+##########################
+lia.cc
