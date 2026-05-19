@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split
 from userConfig import loc, train_vars, mode_names
 import utils as ut
 import json
-#from config.common_defaults import deffccdicts
+from config.common_defaults import deffccdicts
 
 def get_data_paths(cur_mode, data_path):
     path = f"{data_path}/{mode_names[cur_mode]}"
@@ -29,7 +29,6 @@ def calculate_BDT_input_numbers(mode_names, sig, df, eff, xsec, frac):
     N_BDT_inputs = {}
     print(f"Calculating number of BDT inputs for {mode_names}")
     print(f"eff = {eff}")
-    print(f"xsec = {xsec}")
     xsec_tot_bkg = sum(eff[mode] * xsec[mode] for mode in mode_names if mode != sig)
     for cur_mode in mode_names:
         N_BDT_inputs[cur_mode] = (int(frac[cur_mode] * len(df[cur_mode])) if cur_mode == sig else
@@ -58,10 +57,9 @@ def get_procDict(procFile):
         req = urllib.request.urlopen(procFile).read()
         procDict = json.loads(req.decode('utf-8'))
     else:
-        if not ('eos' in procFile):
-            procFile = os.path.join(os.getenv('FCCDICTSDIR').split(':')[0], '') + procFile 
-            #procFile = os.path.join(os.getenv('FCCDICTSDIR', deffccdicts), '') + procFile
-            print(f"procFile is {procFile}")
+        if not ('eos' in procFile): 
+            procFile = os.path.join(os.getenv('FCCDICTSDIR', deffccdicts), '') + procFile
+        print(procFile)
         if not os.path.isfile(procFile):
             print ('----> No procDict found: ==={}===, exit'.format(procFile))
             sys.exit(3)
@@ -83,14 +81,13 @@ def update_procDict_keys(procDict, mode_names):
     
 def run(modes, n_folds, stage):
 
-    #procFile = "FCCee_procDict_winter2023_training_IDEA.json"
-    procFile = "FCCee_procDict_winter2023_IDEA.json"
+    procFile = "FCCee_procDict_winter2023_training_IDEA.json"
     proc_dict = get_procDict(procFile)
     procDict = update_procDict_keys(proc_dict, mode_names)
 
     xsec = {key: value["crossSection"] for key, value in procDict.items() if key in mode_names}
 
-    print(f"Cross sections = {xsec}")
+    #print(f"Cross sections = {xsec}")
     
     sig = "mumuH"
     data_path = loc.TRAIN if stage == "training" else loc.ANALYSIS

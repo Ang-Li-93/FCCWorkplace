@@ -1,9 +1,9 @@
 #python examples/FCCee/higgs/mH-recoil/mumu/finalSel.py
 #Input directory where the files produced at the pre-selection level are
-inputDir = "/eos/user/l/lia/FCCee/MidTerm/ee/MVAInputs"
+inputDir = "/eos/experiment/fcc/ee/analyses_storage/Higgs_and_TOP/mass_xsec/lia/FCCee/TopHiggs/ee/MVAInputs"
 
 #Input directory where the files produced at the pre-selection level are
-outputDir = "/eos/user/l/lia/FCCee/MidTerm/ee/MVAInputs/final"
+outputDir = "/eos/experiment/fcc/ee/analyses_storage/Higgs_and_TOP/mass_xsec/lia/FCCee/TopHiggs/ee/MVAInputs/final"
 
 ###Link to the dictonary that contains all the cross section informations etc...
 procDict = "FCCee_procDict_winter2023_training_IDEA.json"
@@ -21,17 +21,17 @@ procDictAdd={"myp8_ee_WW_mumu_ecm240": {"numberOfEvents": 5000000, "sumOfWeights
 ###Process list that should match the produced files.
 processList = {
                 #signal
-                "wzp6_ee_eeH_ecm240",
+                "wzp6_ee_eeH_ecm365",
                 #background: 
-                "p8_ee_WW_ee_ecm240",
-                "p8_ee_ZZ_ecm240",
-                "wzp6_ee_ee_Mee_30_150_ecm240",
+                #"p8_ee_WW_ee_ecm365",
+                "p8_ee_ZZ_ecm365",
+                "wzp6_ee_ee_Mee_30_150_ecm365",
                 #rare backgrounds:
-                "wzp6_egamma_eZ_Zee_ecm240",
-                "wzp6_gammae_eZ_Zee_ecm240",
-                "wzp6_gaga_ee_60_ecm240",
+                "wzp6_egamma_eZ_Zee_ecm365",
+                "wzp6_gammae_eZ_Zee_ecm365",
+                #"wzp6_gaga_ee_60_ecm365",
               }
-###Add MySample_p8_ee_ZH_ecm240 as it is not an offical process
+###Add MySample_p8_ee_ZH_ecm365 as it is not an offical process
 
 #Number of CPUs to use
 nCPUS = 2
@@ -41,7 +41,7 @@ doTree = False
 ###Dictionnay of the list of cuts. The key is the name of the selection that will be added to the output file
 cutList = { 
             ####baseline without costhetamiss 
-            "sel_Baseline_no_costhetamiss":"zll_m  > 86 && zll_m  < 96  && zll_recoil_m > 120 &&zll_recoil_m  <140 && zll_p  > 20 && zll_p  <70",
+            "sel_Baseline_no_costhetamiss":"zll_m  > 86 && zll_m  < 96  && zll_recoil_m > 120 &&zll_recoil_m  <140 && zll_p  > 20",
             }
 
 

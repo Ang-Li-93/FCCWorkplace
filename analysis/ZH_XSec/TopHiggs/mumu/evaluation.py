@@ -294,7 +294,7 @@ def plot_efficiency(df,mode_names,label):
 
 
 def main():
-    modes = ["mumuH","ZZ","WWmumu","Zll","egamma","gammae","gaga_mumu"]
+    modes = ["mumuH","ZZ","Zll","egamma","gammae","gaga_mumu"]
     df = load_data()
     print_input_summary(df, mode_names)
     bdt = load_trained_model(loc)

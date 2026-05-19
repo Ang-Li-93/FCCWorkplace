@@ -1,6 +1,6 @@
 import os
 #repo = os.getenv('PWD')
-repo = "/eos/user/l/lia/FCCee/MidTerm/mumu"
+repo = "/eos/experiment/fcc/ee/analyses_storage/Higgs_and_TOP/mass_xsec/lia/FCCee/TopHiggs/mumu"
 #repo can be changed, but by default writes locally
 class loc : pass
 loc.ROOT = repo+'/'
@@ -17,7 +17,7 @@ loc.TEX = loc.OUT+'tex'
 loc.JSON = loc.OUT+'json'
 
 #EOS location for files used in analysis
-loc.EOS = "/eos/user/l/lia/FCCee/MidTerm/mumu"
+loc.EOS = "/eos/experiment/fcc/ee/analyses_storage/Higgs_and_TOP/mass_xsec/lia/FCCee/TopHiggs/mumu"
 
 #Output BDT model location - used in official sample production to assign MVA weights
 loc.BDT = f"{loc.EOS}/BDT"
@@ -68,11 +68,11 @@ final_states = "mumu"
 #First stage BDT including event-level vars and vertex vars
 
 #Decay modes used in first stage training and their respective file names
-mode_names = {"mumuH": "wzp6_ee_mumuH_ecm240",
-              "ZZ": "p8_ee_ZZ_ecm240",
-              "WWmumu": "p8_ee_WW_mumu_ecm240",
-              "Zll": "wzp6_ee_mumu_ecm240",
-              "egamma": "wzp6_egamma_eZ_Zmumu_ecm240",
-              "gammae": "wzp6_gammae_eZ_Zmumu_ecm240",
-              "gaga_mumu": "wzp6_gaga_mumu_60_ecm240"}
+mode_names = {"mumuH": "wzp6_ee_mumuH_ecm365",
+              "ZZ": "p8_ee_ZZ_ecm365",
+              #"WWmumu": "p8_ee_WW_mumu_ecm365",
+              "Zll": "wzp6_ee_mumu_ecm365",
+              "egamma": "wzp6_egamma_eZ_Zmumu_ecm365",
+              "gammae": "wzp6_gammae_eZ_Zmumu_ecm365",
+              "gaga_mumu": "wzp6_gaga_mumu_60_ecm365"}
 

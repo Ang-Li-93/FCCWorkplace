@@ -1,0 +1,26 @@
+imax *
+jmax *
+kmax *
+---------------
+#shapes sig        * datacard.root signal
+#shapes bkg * datacard.root background
+#shapes data_obs      * datacard.root data_obs
+#shapes sig        * datacard.root signal_$SYSTEMATIC 
+
+shapes * * datacard.root $PROCESS $PROCESS_$SYSTEMATIC
+---------------
+---------------
+#bin            bin1
+observation     -1
+------------------------------
+bin          bin1           bin1
+process      signal         background
+process      0              1
+rate         -1             -1
+--------------------------------
+#bkg lnU      -              1.5
+bkg_norm rateParam bin1 background 1
+bin1 autoMCStats 0 1 1
+BES  shape    1           -
+SQRTS shape   1           -
+ELSCALE shape 1           -

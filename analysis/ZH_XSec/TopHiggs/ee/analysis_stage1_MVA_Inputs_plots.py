@@ -1,12 +1,12 @@
 import ROOT
 
 # global parameters
-intLumi        = 7.2e+06 #in pb-1
+intLumi        = 3.0e+06 #in pb-1
 ana_tex        = 'e^{+}e^{-} #rightarrow ZH #rightarrow e^{+}e^{-} + X'
 delphesVersion = '3.4.2'
-energy         = 240.0
+energy         = 365.0
 collider       = 'FCC-ee'
-inputDir       = '/eos/user/l/lia/FCCee/MidTerm/ee/MVAInputs/final/'
+inputDir       = '/eos/experiment/fcc/ee/analyses_storage/Higgs_and_TOP/mass_xsec/lia/FCCee/TopHiggs/ee/MVAInputs/final/'
 #formats        = ['png','pdf']
 yaxis          = ['lin','log']
 #yaxis          = ['lin']
@@ -14,7 +14,7 @@ stacksig       = ['stack','nostack']
 #stacksig       = ['stack']
 formats        = ['pdf','png','eps','tex']
 #yaxis          = ['lin']
-outdir         = '/eos/user/l/lia/FCCee/MidTerm/ee/MVAInputs/plots/'
+outdir         = '/eos/experiment/fcc/ee/analyses_storage/Higgs_and_TOP/mass_xsec/lia/FCCee/TopHiggs/ee/MVAInputs/plots/'
 
 variables = [   #muons
                 "leading_zll_lepton_p",
@@ -58,14 +58,14 @@ colors['gagaee'] = ROOT.kBlue-8
 colors['WW'] = ROOT.kBlue+1
 colors['ZZ'] = ROOT.kGreen+2
 plots = {}
-plots['ZH'] = {'signal':{'eeH':['wzp6_ee_eeH_ecm240']},
+plots['ZH'] = {'signal':{'eeH':['wzp6_ee_eeH_ecm365']},
                'backgrounds':{
-                                'WWee':['p8_ee_WW_ee_ecm240'],
-                                'ZZ':['p8_ee_ZZ_ecm240'],
-                                'Zee':['wzp6_ee_ee_Mee_30_150_ecm240'],
-                                'eeZ':["wzp6_egamma_eZ_Zee_ecm240",
-                                     "wzp6_gammae_eZ_Zee_ecm240"],
-                                'gagaee':["wzp6_gaga_ee_60_ecm240"]
+                                #'WWee':['p8_ee_WW_ee_ecm365'],
+                                'ZZ':['p8_ee_ZZ_ecm365'],
+                                'Zee':['wzp6_ee_ee_Mee_30_150_ecm365'],
+                                'eeZ':["wzp6_egamma_eZ_Zee_ecm365",
+                                     "wzp6_gammae_eZ_Zee_ecm365"],
+                                #'gagaee':["wzp6_gaga_ee_60_ecm365"]
                                 }
               }
 legend = {}

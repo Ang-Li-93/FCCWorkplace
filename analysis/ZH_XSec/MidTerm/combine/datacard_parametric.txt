@@ -1,0 +1,23 @@
+imax *
+jmax *
+kmax *
+---------------
+shapes sig      * datacard.root w:sig
+shapes bkg      * datacard.root w:bkg
+shapes data_obs * datacard.root w:data_obs
+---------------
+---------------
+#bin            bin1
+observation     -1
+------------------------------
+bin          bin1           bin1
+process      sig            bkg
+process      0              1
+rate         1              1
+--------------------------------
+bkg_norm rateParam bin1 bkg 1
+BES param 0 1
+#ISR param 0 1
+SQRTS param 0 1
+LEPSCALE param 0 1
+

@@ -1,12 +1,12 @@
 import ROOT
 
 # global parameters
-intLumi        = 7.2e+06 #in pb-1
+intLumi        = 3.0e+06 #in pb-1
 ana_tex        = 'e^{+}e^{-} #rightarrow ZH #rightarrow e^{+}e^{-} + X'
 delphesVersion = '3.4.2'
-energy         = 240.0
+energy         = 365.0
 collider       = 'FCC-ee'
-inputDir       = '/eos/user/l/lia/FCCee/MidTerm/ee/BDT_analysis_samples/final/'
+inputDir       = '/eos/experiment/fcc/ee/analyses_storage/Higgs_and_TOP/mass_xsec/lia/FCCee/TopHiggs/ee/BDT_analysis_samples/final/'
 #formats        = ['png','pdf']
 yaxis          = ['lin','log']
 #yaxis          = ['lin']
@@ -14,7 +14,7 @@ stacksig       = ['stack','nostack']
 #stacksig       = ['stack']
 formats        = ['pdf','png','tex']
 #yaxis          = ['lin']
-outdir         = '/eos/user/l/lia/FCCee/MidTerm/ee/BDT_analysis_samples/plots/'
+outdir         = '/eos/experiment/fcc/ee/analyses_storage/Higgs_and_TOP/mass_xsec/lia/FCCee/TopHiggs/ee/BDT_analysis_samples/plots/'
 
 variables = [  #muons
                "mz",
@@ -194,16 +194,18 @@ colors['WW'] = ROOT.kBlue+1
 colors['VV'] = ROOT.kGreen+3
 colors['rare'] = ROOT.kSpring
 plots = {}
-plots['ZH'] = {'signal':{'eeH':['wzp6_ee_eeH_ecm240']},
-               'backgrounds':{'eeZ':["wzp6_egamma_eZ_Zee_ecm240",
-                                     "wzp6_gammae_eZ_Zee_ecm240"],
-                                'WW':['p8_ee_WW_ecm240'],
-                                'Zll':['wzp6_ee_ee_Mee_30_150_ecm240'],
-                                'ZZ':['p8_ee_ZZ_ecm240'],
-                                'rare':["wzp6_ee_tautau_ecm240",
-                                        "wzp6_gaga_ee_60_ecm240",
-                                        "wzp6_gaga_tautau_60_ecm240",
-                                        "wzp6_ee_nuenueZ_ecm240"
+plots['ZH'] = {'signal':{'eeH':['wzp6_ee_eeH_ecm365']},
+               'backgrounds':{'eeZ':["wzp6_egamma_eZ_Zee_ecm365",
+                                     "wzp6_gammae_eZ_Zee_ecm365"],
+                                #'WW':['p8_ee_WW_ecm365'],
+                                'Zll':['wzp6_ee_ee_Mee_30_150_ecm365'],
+                                'ZZ':['p8_ee_ZZ_ecm365'],
+                                'rare':["wzp6_ee_tautau_ecm365",
+                                        "wzp6_gaga_ee_60_ecm365",
+                                        "wzp6_gaga_tautau_60_ecm365",
+                                        "wzp6_ee_nuenueZ_ecm365",
+                                        'p8_ee_WW_ecm365',
+                                        "p8_ee_tt_ecm365"
                                         ]}
               }
 legend = {}

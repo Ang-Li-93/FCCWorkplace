@@ -16,7 +16,7 @@ import uproot
 import ROOT
 import joblib
 import glob
-#import seaborn as sns
+import seaborn as sns
 from tqdm import tqdm
 
 from matplotlib import rc
@@ -294,7 +294,7 @@ def plot_efficiency(df,mode_names,label):
 
 
 def main():
-    modes = ["mumuH","ZZ","WWmumu","Zll","egamma","gammae","gaga_mumu"]
+    modes = ["mumuH","ZZ","Zll","egamma","gammae","gaga_mumu"]
     df = load_data()
     print_input_summary(df, mode_names)
     bdt = load_trained_model(loc)

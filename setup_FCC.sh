@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # Source Key4hep and setup script
-source /cvmfs/sw.hsf.org/key4hep/setup.sh -r 2024-03-10
+# source /cvmfs/sw.hsf.org/key4hep/setup.sh -r 2024-03-10  # old stack, no longer compatible after upstream FCCAnalyses update
+source /cvmfs/sw.hsf.org/key4hep/setup.sh -r 2026-04-08
 cd FCCAnalyses
 source ./setup.sh
 

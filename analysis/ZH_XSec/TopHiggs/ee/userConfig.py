@@ -1,6 +1,6 @@
 import os
 #repo = os.getenv('PWD')
-repo = "/eos/user/l/lia/FCCee/MidTerm/ee"
+repo = "/eos/experiment/fcc/ee/analyses_storage/Higgs_and_TOP/mass_xsec/lia/FCCee/TopHiggs/ee"
 #repo can be changed, but by default writes locally
 class loc : pass
 loc.ROOT = repo+'/'
@@ -17,7 +17,7 @@ loc.TEX = loc.OUT+'tex'
 loc.JSON = loc.OUT+'json'
 
 #EOS location for files used in analysis
-loc.EOS = "/eos/user/l/lia/FCCee/MidTerm/ee"
+loc.EOS = "/eos/experiment/fcc/ee/analyses_storage/Higgs_and_TOP/mass_xsec/lia/FCCee/TopHiggs/ee"
 
 #Output BDT model location - used in official sample production to assign MVA weights
 loc.BDT = f"{loc.EOS}/BDT"
@@ -68,12 +68,13 @@ latex_mapping = {
 final_states = "ee"
 
 #Decay modes used in first stage training and their respective file names
-mode_names = {"eeH": "wzp6_ee_eeH_ecm240",
-              "ZZ": "p8_ee_ZZ_ecm240",
-              "WWee": "p8_ee_WW_ee_ecm240",
-              "Zll": "wzp6_ee_ee_Mee_30_150_ecm240",
-              "egamma": "wzp6_egamma_eZ_Zee_ecm240",
-              "gammae": "wzp6_gammae_eZ_Zee_ecm240",
-              "gaga_ee": "wzp6_gaga_ee_60_ecm240"}
+mode_names = {"eeH": "wzp6_ee_eeH_ecm365",
+              "ZZ": "p8_ee_ZZ_ecm365",
+              #"WWee": "p8_ee_WW_ee_ecm365",
+              "Zll": "wzp6_ee_ee_Mee_30_150_ecm365",
+              "egamma": "wzp6_egamma_eZ_Zee_ecm365",
+              "gammae": "wzp6_gammae_eZ_Zee_ecm365",
+              #"gaga_ee": "wzp6_gaga_ee_60_ecm365"
+              }
 
 

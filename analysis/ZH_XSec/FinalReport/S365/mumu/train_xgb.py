@@ -10,7 +10,7 @@ import xgboost as xgb
 import uproot
 import ROOT
 import joblib
-#import seaborn as sns
+import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from matplotlib import rc
@@ -29,7 +29,8 @@ rc('text', usetex=True)
 
 
 def run():
-    modes = ["mumuH", "ZZ", "WWmumu", "Zll", "egamma", "gammae", "gaga_mumu"]
+    #modes = ["mumuH", "ZZ", "WWmumu", "Zll", "egamma", "gammae", "gaga_mumu"]
+    modes = ["mumuH", "ZZ", "Zll", "egamma", "gammae", "gaga_mumu"] 
     vars_list = train_vars
     print("TRAINING VARS")
     print(vars_list)
