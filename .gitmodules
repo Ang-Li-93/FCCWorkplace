@@ -3,7 +3,3 @@
   	url = git@github.com:Ang-Li-93/FCCAnalyses.git
   	branch = AngDevOld
 
-[submodule "HiggsAnalysis-CombinedLimit"]
-	path = HiggsAnalysis-CombinedLimit
-	url = git@github.com:cms-analysis/HiggsAnalysis-CombinedLimit.git
-	branch = 112x
