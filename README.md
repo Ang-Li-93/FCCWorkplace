@@ -11,37 +11,42 @@ Follow the instructions step-by-step.
 ### Clone the repository
 
 ```shell=
-git clone git@github.com:Ang-Li-93/FCCWorkplace.git
+git clone --recurse-submodules git@github.com:Ang-Li-93/FCCWorkplace.git
+cd FCCWorkplace
 ```
-### Install FCCAnalyses
+
+### Setup
+
+A single entrypoint sources Key4hep, builds FCCAnalyses if needed, and
+creates/activates a local Python venv layered on Key4hep (so packages
+like `sklearn`, `xgboost`, `uproot` are available alongside the
+Key4hep stack).
+
 ```shell=
-cd FCCAnalyses
-source /cvmfs/sw.hsf.org/key4hep/setup.sh -r 2024-03-10
-source ./setup.sh
-fccanalysis build -j 8
-cd ..
+source setup.sh
 ```
 
-### Install Combine
+Options:
+
+| Flag | Effect |
+|---|---|
+| `--rebuild-fcc`  | Force rebuild of FCCAnalyses |
+| `--rebuild-venv` | Force rebuild of the local Python venv |
+| `--rebuild`      | Both of the above |
+| `--help`         | Show usage |
+
+After each login, just rerun `source setup.sh`.
+
+### Combine
+
+The CMS `HiggsAnalysis-CombinedLimit` submodule has been removed in
+favour of the FCCSW Singularity image. Use the wrapper:
+
 ```shell=
-cd HiggsAnalysis-CombinedLimit/
-source env_standalone.sh
-make -j ${nproc}
-cd ../
+./run_combine.sh combine -M MultiDimFit datacard.root
+./run_combine.sh text2workspace.py datacard.txt
 ```
 
-### Install local python packages (i.e. sklearn, xgboost)
-```shell=
-sh install_venv.sh
-source setup_local.sh
-```
-
-## Setup After Each Login
-
-1. Navigate to the `FCCAnalysis` repository and run `source setup.sh`.
-2. Navigate to `FCCeePhysicsPerformance/case-studies/higgs/dataframe/` and run `source localSetup.sh`.
-3. Go to the working directory (`mH-recoil`) and run `source setup.sh`.
-
-**Note:** The working directory is `FCCeePhysicsPerformance/case-studies/higgs/mH-recoil`.
+Override the image with `COMBINE_IMG=/path/to/other.sif` if needed.
 
 [Note](https://codimd.web.cern.ch/v-2loZ2BSmSurcYI1v-Nkg?both)

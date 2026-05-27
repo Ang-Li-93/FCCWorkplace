@@ -2,11 +2,8 @@ seaborn
 uproot
 tqdm
 awkward
-zfit
 xgboost
 scikit-learn
 hyperopt
-hpogrid
-graphviz
 pandas
 atlasplots
