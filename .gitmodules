@@ -3,3 +3,6 @@
   	url = git@github.com:Ang-Li-93/FCCAnalyses.git
   	branch = AngDevOld
 
+[submodule "FCCAnalyses-winter2023"]
+	path = FCCAnalyses-winter2023
+	url = git@github.com:Ang-Li-93/FCCAnalyses.git

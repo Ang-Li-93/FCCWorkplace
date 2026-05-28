@@ -56,6 +56,10 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+# Local venvs created by setup.sh / setup_hbs.sh (per Key4hep stack).
+# local_env/ is self-ignored via its own .gitignore (Python 3.11+ venv default);
+# older Pythons don't auto-generate that, so we ignore the pattern here too.
+local_env_*/
 
 # C/C++ #
 #########
