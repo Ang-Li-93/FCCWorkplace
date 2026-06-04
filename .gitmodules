@@ -18,3 +18,9 @@
 	path = CLDConfig
 	url = git@github.com:Ang-Li-93/CLDConfig.git
 	branch = main
+[submodule "k4geo"]
+	path = k4geo
+	url = git@github.com:Ang-Li-93/k4geo.git
+[submodule "k4Reco"]
+	path = k4Reco
+	url = git@github.com:Ang-Li-93/k4Reco.git
