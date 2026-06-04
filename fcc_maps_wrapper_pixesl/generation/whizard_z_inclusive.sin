@@ -1,0 +1,48 @@
+# whizard_z_inclusive.sin
+# =======================
+# WHIZARD steering for e+ e- -> Z -> inclusive at the Z pole (sqrt(s)=91.2 GeV).
+#
+# TWO process options are provided below. Enable exactly ONE by leaving its
+# `process`/`simulate` block uncommented and commenting the other. Option 2
+# (all fermions) is the default "inclusive Z" sample.
+#
+# NOTE on hadronization: the parton-level e+e- -> q qbar process needs a parton
+# shower + hadronization to give realistic charged-track multiplicity in the
+# wrapper. WHIZARD can shower via its PYTHIA6 interface (?ps_..._active flags)
+# or you can hand the LHE/HepMC to PYTHIA8 separately. For a FIRST debugging
+# pass the parton-level output already produces wrapper hits; turn on the
+# shower once the chain is validated. See README_generation.md.
+
+model = SM
+
+# ----- beams & ISR ---------------------------------------------------------
+sqrts = 91.2 GeV
+?isr_handler = true          # initial-state radiation
+isr_alpha = 0.0072973525693
+isr_q_max = 91.2 GeV
+beams = e1, E1 => isr        # e- e+ with ISR structure function
+
+# ----- common run settings -------------------------------------------------
+seed = 42
+sample_format = hepmc        # ddsim reads .hepmc directly (--inputFiles)
+# alternatives: stdhep, lcio, lhef  (change run_whizard.sh accordingly)
+
+# ===========================================================================
+# OPTION 1: hadronic inclusive  e+ e- -> Z -> q qbar  (light + b + c)
+# ===========================================================================
+# process zinc = e1, E1 => u:U:d:D:s:S:c:C:b:B
+# integrate (zinc)
+# n_events = 1000
+# simulate (zinc) { $sample = "z_inclusive_gen" }
+
+# ===========================================================================
+# OPTION 2 (DEFAULT): all-fermion inclusive  e+ e- -> Z -> all f fbar
+#   (quarks + charged leptons + neutrinos)
+# ===========================================================================
+process zinc = e1, E1 => \
+      u:U:d:D:s:S:c:C:b:B \
+    : e2:E2:e3:E3 \
+    : n1:N1:n2:N2:n3:N3
+integrate (zinc)
+n_events = 1000
+simulate (zinc) { $sample = "z_inclusive_gen" }

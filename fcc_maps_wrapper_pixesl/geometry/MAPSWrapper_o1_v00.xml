@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  MAPSWrapper_o1_v00.xml
+  ======================
+  Minimal ALLEGRO-inspired MAPS silicon-wrapper BARREL, as a DD4hep compact
+  sub-detector fragment. Pixel pitch 20 um x 20 um, sensitive Si thickness
+  50 um, one barrel layer just outside the drift chamber.
+
+  *** STATUS: TEMPLATE ***
+  ALLEGRO o1_v03 ALREADY ships a sensitive silicon wrapper barrel ("SiWrB",
+  collection SiWrBCollection). For the first milestone you do NOT need this
+  file -- use the existing wrapper and pixelize in the converter.
+
+  Use this file only if you want a *standalone* simplified MAPS layer with a
+  real DD4hep pixel segmentation (CartesianGridXY), e.g. to compare against the
+  converter-side pixelization. The <readout> block below (with the 20 um
+  CartesianGridXY segmentation) is the reusable, correct part; the <detector>
+  block uses a generic barrel type whose exact schema depends on your k4geo
+  version -- see geometry/README_geometry.md for how to (a) include this file
+  in the ALLEGRO compact XML, or (b) better: add this segmentation to the
+  existing SiWrBCollection readout in your local k4geo.
+
+  The radius / half length below mirror ALLEGRO SiWrB (2040 mm / 2400 mm).
+-->
+<lccdd>
+
+  <define>
+    <constant name="MAPSWr_inner_radius" value="2040*mm"/>
+    <constant name="MAPSWr_thickness"    value="0.05*mm"/>   <!-- 50 um sensitive Si -->
+    <constant name="MAPSWr_half_length"  value="2400*mm"/>
+    <constant name="MAPSWr_pixel_x"      value="0.02*mm"/>   <!-- 20 um -->
+    <constant name="MAPSWr_pixel_y"      value="0.02*mm"/>   <!-- 20 um -->
+  </define>
+
+  <!--
+    Readout with a real 20 um x 20 um pixel segmentation. This is the key,
+    reusable piece: with CartesianGridXY the SimTrackerHit cellID encodes the
+    pixel (x,y) indices directly, enabling true cellID decoding later instead
+    of converter-side position->pixel mapping.
+  -->
+  <readouts>
+    <readout name="MAPSWrapperReadout">
+      <id>system:5,layer:4,module:12,sensor:8,x:24:-12,y:-12</id>
+      <segmentation type="CartesianGridXY"
+                    grid_size_x="MAPSWr_pixel_x"
+                    grid_size_y="MAPSWr_pixel_y"/>
+    </readout>
+  </readouts>
+
+  <!--
+    Detector block: TEMPLATE. The generic cylindrical-barrel detector type and
+    its child-element schema vary between k4geo versions. Two practical paths:
+
+      (A) Reuse ALLEGRO's existing "VertexBarrel_detailed_o1_v02" stave/module
+          machinery (as SiWrB does) and just attach MAPSWrapperReadout +
+          the segmentation above.
+
+      (B) Use a simple sensitive tube via a generic barrel plugin available in
+          your k4geo build (e.g. a TrackerBarrel_o1_vNN). Fill in the layer /
+          module parameters required by that plugin.
+
+    Collection name produced = the readout name = "MAPSWrapperReadout"
+    (DD4hep names the SimTrackerHit collection after the readout). The
+    converter's collections_config.yaml also lists "MAPSWrapperBarrelHits" as a
+    fallback in case you rename the readout/collection.
+  -->
+  <detectors>
+    <!--
+    <detector id="90" name="MAPSWrapperBarrel"
+              type="REPLACE_WITH_VALID_BARREL_TYPE"
+              readout="MAPSWrapperReadout" vis="SiWrSensitiveVis">
+      <type_flags type="DetType_TRACKER + DetType_PIXEL + DetType_BARREL"/>
+      <envelope>
+        <shape type="Tube"
+               rmin="MAPSWr_inner_radius"
+               rmax="MAPSWr_inner_radius + 1*mm"
+               dz="MAPSWr_half_length" material="Air"/>
+      </envelope>
+      <layer id="0" inner_r="MAPSWr_inner_radius" outer_z="MAPSWr_half_length">
+        <module name="MAPSModule" material="Silicon">
+          <module_component thickness="MAPSWr_thickness" material="Silicon"
+                            sensitive="true"/>
+        </module>
+      </layer>
+    </detector>
+    -->
+  </detectors>
+
+</lccdd>

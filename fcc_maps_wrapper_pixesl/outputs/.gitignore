@@ -1,0 +1,4 @@
+# Ignore all generated outputs but keep the directory in git.
+*
+!.gitignore
+!.gitkeep

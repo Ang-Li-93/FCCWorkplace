@@ -1,0 +1,45 @@
+# geometry_config.yaml
+# ---------------------
+# Sensor / readout assumptions and barrel->pixel mapping for the PixESL
+# converter. Defaults below come from the ALLEGRO o1_v03 silicon wrapper
+# (SiWrB) plus the MAPS/MOSAIX-like baseline sensor for WP1.
+#
+# ALLEGRO SiWrB (from k4geo FCCee/ALLEGRO/.../SiliconWrapper_o1_v03.xml):
+#   inner radius = 2040 mm, layer-2 radius = 2060 mm, half length = 2400 mm,
+#   sensitive thickness = 50 um, material = Silicon (ATLASPix3-like).
+#   CellID = system:5,side:-2,layer:3,module:16,sensor:6  (NO pixel segmentation)
+#   => pixelization (20 um) is done HERE, in the converter.
+
+sensor:
+  pixel_pitch_x_um: 20
+  pixel_pitch_y_um: 20
+  n_col: 1024
+  n_row: 1024
+  sensor_size_x_mm: 20.48     # n_col * pitch_x  = 1024 * 0.020 mm
+  sensor_size_y_mm: 20.48     # n_row * pitch_y  = 1024 * 0.020 mm
+  thickness_um: 50            # matches ALLEGRO SiWr_Sensitive_Thickness
+
+wrapper:
+  radius_mm: 2040.0           # ALLEGRO SiWrB inner-layer radius (was a placeholder)
+  half_length_mm: 2400.0      # ALLEGRO SiWrB half length
+  phi0: 0.0                   # phi of the reference tile centre [rad]
+  z0: 0.0                     # z of the reference tile centre [mm]
+  use_simple_barrel_mapping: true
+
+  # Tiling mode for the simple barrel mapping:
+  #   "single" : one sensor tile centred at (phi0, z0); hits outside the
+  #              sensor_size window are rejected (faithful to the WP1 spec).
+  #   "wrap"   : treat the whole cylinder as one big pixel grid (COL across the
+  #              full 2*pi*r circumference, ROW across the full 2*half_length).
+  #              Guarantees every barrel hit lands somewhere -> useful for a
+  #              first occupancy/rate look. n_col/n_row are auto-expanded.
+  tile_mode: wrap
+
+timing:
+  use_event_as_bx: true       # BX = event index for the first version
+  bx_spacing_ps: 20000        # placeholder; real FCC-ee Z BX spacing ~ a few ns
+
+charge:
+  eh_pair_energy_eV: 3.6      # mean energy per e-h pair in Si
+  default_qin_electrons: 1500 # used if edep is unavailable / zero
+  use_edep_if_available: true
