@@ -5,14 +5,19 @@
 import os, copy, urllib.request
 
 processList = {
-    #'wzp6_ee_mumuH_ecm240':           {'chunks': 10},
-    'wzp6_ee_mumuH_Hbs_ecm240':       {'chunks': 10},
-    'p8_ee_WW_mumu_ecm240':           {'chunks': 10},
-    'wzp6_egamma_eZ_Zmumu_ecm240':    {'chunks': 10},
-    'wzp6_gammae_eZ_Zmumu_ecm240':    {'chunks': 10},
-    'wzp6_ee_mumu_ecm240':            {'chunks': 10},
-    'p8_ee_ZZ_ecm240':                {'chunks': 10},
-    'wzp6_gaga_mumu_60_ecm240':       {'chunks': 10},
+    #background
+    'wzp6_ee_mumuH_ecm240':           {'chunks': 10, 'fraction':0.10},
+    #signal
+    'wzp6_ee_mumuH_Hbs_ecm240':       {'chunks': 10, 'fraction':0.10},
+    #Check
+    'wzp6_ee_mumuH_Hbb_ecm240':       {'chunks': 10, 'fraction':0.10},
+
+    #'p8_ee_WW_mumu_ecm240':           {'chunks': 10},
+    #'wzp6_egamma_eZ_Zmumu_ecm240':    {'chunks': 10},
+    #'wzp6_gammae_eZ_Zmumu_ecm240':    {'chunks': 10},
+    #'wzp6_ee_mumu_ecm240':            {'chunks': 10},
+    #'p8_ee_ZZ_ecm240':                {'chunks': 10},
+    #'wzp6_gaga_mumu_60_ecm240':       {'chunks': 10},
 }
 
 prodTag     = "FCCee/winter2023/IDEA/"
@@ -21,6 +26,9 @@ eosType     = "eosuser"
 nCPUS       = 4
 batchQueue  = "longlunch"
 compGroup   = "group_u_FCC.local_gen"
+runBatch = False
+
+outputDir= "/afs/cern.ch/user/d/dduan/private/FCCWorkplace/analysis/Hbs/mumu/ROOT_Files"
 
 ## ParticleNet flavor tagger model (winter2023), trained on 9M jets
 model_name    = "fccee_flavtagging_edm4hep_wc_v1"
