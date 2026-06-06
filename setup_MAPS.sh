@@ -6,30 +6,41 @@
 # k4geo / k4Reco forks, then delegates to the repo's setup script.
 #
 # Usage:
-#   source setup_MAPS.sh                 # stable release + local forks (if present)
+#   source setup_MAPS.sh                 # fixed stable release + local forks
+#   source setup_MAPS.sh --build-k4geo   # (one-time) build local k4geo, then setup
 #   source setup_MAPS.sh --no-local      # ignore local forks, use CVMFS geometry
 #   source setup_MAPS.sh --help
+#
+# Reproducible design (Option A): a FIXED stable Key4hep release + a locally
+# BUILT k4geo fork (via k4_local_repo) supplying the compiled detector plugins
+# (e.g. VertexBarrel_detailed_o1_v03) that the stable stack does not ship, while
+# the editable SOURCE-tree XML is used for geometry (live edits, no reinstall).
 #
 # Pinned versions for this project (override by exporting before sourcing):
 #   KEY4HEP_RELEASE   stable release date         (default: 2026-04-08)
 #   ALLEGRO_BASE      dir holding the k4geo/k4Reco submodules
 #                                                  (default: this FCCWorkplace dir)
-#   LOCAL_K4GEO       k4geo dir that contains FCCee/  (auto from ALLEGRO_BASE)
-#   K4RECO_DIR        built k4Reco repo               (auto from ALLEGRO_BASE)
+#   LOCAL_K4GEO       k4geo dir that contains FCCee/   (auto from ALLEGRO_BASE)
+#   K4GEO_DIR         local k4geo repo to build/register (auto from ALLEGRO_BASE)
+#   K4RECO_DIR        built k4Reco repo                  (auto from ALLEGRO_BASE)
 #   ALLEGRO_VERSION   detector version, e.g. ALLEGRO_o1_v03 (default: latest found)
 #
 # k4geo / k4Reco live as git submodules under FCCWorkplace (./k4geo, ./k4Reco).
 # If missing, add them with:
 #   bash fcc_maps_wrapper_pixesl/setup/clone_local_forks.sh   (needs GitHub SSH)
+# First time only, build k4geo so its _o1_v03 plugins are available:
+#   source setup_MAPS.sh --build-k4geo
 
 _USE_LOCAL=1
 for arg in "$@"; do
     case "$arg" in
         --no-local) _USE_LOCAL=0 ;;
+        --build-k4geo) export K4GEO_BUILD=1 ;;
         -h|--help)
-            echo "Usage: source setup_MAPS.sh [--no-local]"
-            echo "  pins KEY4HEP_RELEASE (default 2026-04-08) and wires the"
-            echo "  k4geo/k4Reco forks under ALLEGRO_BASE for this project."
+            echo "Usage: source setup_MAPS.sh [--build-k4geo] [--no-local]"
+            echo "  Fixed stable KEY4HEP_RELEASE (default 2026-04-08) + local k4geo"
+            echo "  build (via k4_local_repo) for the _o1_v03 plugins. --build-k4geo"
+            echo "  compiles k4geo once; afterwards just: source setup_MAPS.sh"
             return 0 2>/dev/null || exit 0
             ;;
         *) echo "Unknown option: $arg"; return 1 2>/dev/null || exit 1 ;;
@@ -51,14 +62,12 @@ ALLEGRO_BASE="${ALLEGRO_BASE:-${LOCAL_DIR}}"
 
 # --- wire local editable forks (only if present) --------------------------
 if [ "$_USE_LOCAL" -eq 1 ]; then
-    # k4geo geometry dir: prefer a source checkout root, else share/k4geo.
-    if [ -z "${LOCAL_K4GEO:-}" ]; then
-        for _cand in "${ALLEGRO_BASE}/k4geo" "${ALLEGRO_BASE}/k4geo/share/k4geo"; do
-            if [ -d "${_cand}/FCCee/ALLEGRO" ]; then
-                export LOCAL_K4GEO="${_cand}"
-                break
-            fi
-        done
+    # The k4geo fork source root (contains FCCee/) is used both for the build
+    # (K4GEO_DIR -> compiled plugins) and the editable XML (LOCAL_K4GEO).
+    if [ -d "${ALLEGRO_BASE}/k4geo/FCCee/ALLEGRO" ]; then
+        : "${K4GEO_DIR:=${ALLEGRO_BASE}/k4geo}"
+        : "${LOCAL_K4GEO:=${ALLEGRO_BASE}/k4geo}"
+        export K4GEO_DIR LOCAL_K4GEO
     fi
     if [ -z "${K4RECO_DIR:-}" ] && [ -d "${ALLEGRO_BASE}/k4Reco" ]; then
         export K4RECO_DIR="${ALLEGRO_BASE}/k4Reco"
@@ -71,11 +80,12 @@ if [ "$_USE_LOCAL" -eq 1 ]; then
     fi
 else
     echo "[setup_MAPS] --no-local: ignoring forks, using CVMFS geometry."
-    unset LOCAL_K4GEO K4RECO_DIR
+    unset LOCAL_K4GEO K4GEO_DIR K4RECO_DIR
 fi
 
 echo "[setup_MAPS] KEY4HEP_RELEASE = ${KEY4HEP_RELEASE}"
 echo "[setup_MAPS] LOCAL_K4GEO     = ${LOCAL_K4GEO:-<central CVMFS>}"
+echo "[setup_MAPS] K4GEO_DIR       = ${K4GEO_DIR:-<none>}  (build: --build-k4geo)"
 echo "[setup_MAPS] K4RECO_DIR      = ${K4RECO_DIR:-<none>}"
 
 # --- delegate to the repo setup (sources Key4hep, k4_local_repo, records env)

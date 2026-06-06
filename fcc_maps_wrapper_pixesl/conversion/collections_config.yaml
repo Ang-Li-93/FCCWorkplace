@@ -1,20 +1,15 @@
 # collections_config.yaml
 # -----------------------
-# Candidate SimTrackerHit collections to convert, in priority order. The
-# converter picks the FIRST collection present in the input file unless the
-# user overrides with --collection.
-#
-# For ALLEGRO o1_v03 the silicon wrapper barrel collection is "SiWrBCollection"
-# (disks are "SiWrDCollection"). The other names are kept as fallbacks for
-# different geometry versions / custom MAPS wrappers.
+# Candidate SimTrackerHit collections, in priority order. The converter picks the
+# first one present in the file unless overridden with --collection.
+# Primary target: the vertex barrel (its outer 2 layers = VTXOB = the 20 um MAPS).
 
 input:
   simhit_collections:
-    - SiWrBCollection        # ALLEGRO silicon wrapper BARREL (primary target)
-    - SiWrDCollection        # ALLEGRO silicon wrapper DISKS
-    - MAPSWrapperBarrelHits   # custom MAPS wrapper (geometry/MAPSWrapper_o1_v00.xml)
-    - SiWrapperBarrelHits
-    - TrackerBarrelHits
+    - VertexBarrelCollection   # ALLEGRO/BNL_MAPS vertex barrel (VTXOB = layers 3,4)
+    - SiWrBCollection          # legacy: ALLEGRO silicon wrapper barrel
+    - SiWrDCollection
+    - MAPSWrapperBarrelHits
     - SimTrackerHits
 
 output:

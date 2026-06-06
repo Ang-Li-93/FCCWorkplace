@@ -2,23 +2,21 @@
 """
 convert_simhits_to_pixesl.py
 ============================
-Convert EDM4hep ``SimTrackerHit`` collections (e.g. the ALLEGRO silicon-wrapper
-``SiWrBCollection``) into a PixESL input table:
+Convert EDM4hep ``SimTrackerHit`` collections into the PixESL input table:
 
     BX,COL,ROW,h_time,qin
 
-Columns
--------
-BX      bunch-crossing number (first version: event index)
-COL     pixel column, from local x via a simple barrel mapping
-ROW     pixel row,    from local y (= z along the barrel) via the same mapping
-h_time  hit time in picoseconds
-qin     input charge in electrons (from energy deposit, or a default)
+Default target: the ALLEGRO/BNL_MAPS OUTER vertex barrel layers (VTXOB, layer
+ids 3 & 4) in ``VertexBarrelCollection``, read out at 20 um. Because that
+readout has a real ``CartesianGridXY`` segmentation, COL/ROW come from DECODING
+the SimTrackerHit cellID (layer, x, y) -- mode "decode_cellid" (needs --compact
+to build the bitfield decoder). A "barrel_position" fallback maps from the hit
+position for collections without a pixel segmentation (e.g. the old SiWr).
 
-Reader
-------
-Uses ``podio.root_io.Reader`` (the canonical EDM4hep reader, available inside
-the Key4hep stack). Falls back to ``uproot`` only if podio is unavailable.
+Outputs:
+  <output>.csv                  strict PixESL table  BX,COL,ROW,h_time,qin
+  <output>_extended.csv         + layer,module,sensor,r_mm,z_mm  (for analysis/plots)
+  <output>.metadata.json        provenance + counts + offsets
 
 Run ``python convert_simhits_to_pixesl.py --help`` for options.
 """
@@ -33,386 +31,294 @@ from pathlib import Path
 
 
 # --------------------------------------------------------------------------- #
-# Small helpers
-# --------------------------------------------------------------------------- #
-def die(msg: str, code: int = 1) -> "None":
+def die(msg: str, code: int = 1):
     print(f"ERROR: {msg}", file=sys.stderr)
     sys.exit(code)
 
 
-def require_module(name: str, advice: str):
-    try:
-        return __import__(name)
-    except Exception as exc:  # noqa: BLE001
-        die(
-            f"required Python module '{name}' could not be imported ({exc}).\n"
-            f"       {advice}"
-        )
-
-
 def load_yaml(path: Path):
-    yaml = require_module(
-        "yaml",
-        "Source the Key4hep stack (setup/setup_key4hep.sh) or 'pip install pyyaml'.",
-    )
+    try:
+        import yaml
+    except Exception as exc:  # noqa: BLE001
+        die(f"pyyaml needed ({exc}). Source the Key4hep stack.")
     if not path.is_file():
         die(f"config file not found: {path}")
-    with path.open() as fh:
-        return yaml.safe_load(fh)
+    return yaml.safe_load(path.read_text())
 
 
 def git_hash() -> str:
     try:
-        here = Path(__file__).resolve().parent
         out = subprocess.check_output(
             ["git", "rev-parse", "--short", "HEAD"],
-            cwd=here,
-            stderr=subprocess.DEVNULL,
-        )
+            cwd=Path(__file__).resolve().parent, stderr=subprocess.DEVNULL)
         return out.decode().strip()
     except Exception:  # noqa: BLE001
         return "unknown"
 
 
-def wrap_to_pi(angle: float) -> float:
-    """Wrap an angle to [-pi, pi)."""
-    return (angle + math.pi) % (2.0 * math.pi) - math.pi
-
-
-# --------------------------------------------------------------------------- #
-# Charge / time conversions
-# --------------------------------------------------------------------------- #
 _EDEP_TO_EV = {"GeV": 1.0e9, "MeV": 1.0e6, "keV": 1.0e3, "eV": 1.0}
 _TIME_TO_PS = {"ns": 1.0e3, "ps": 1.0, "s": 1.0e12, "us": 1.0e6}
 
 
-def edep_to_qin(edep: float, unit: str, eh_pair_eV: float,
-                default_q: float, use_edep: bool) -> float:
+def edep_to_qin(edep, unit, eh_eV, default_q, use_edep):
     if use_edep and edep and edep > 0.0:
-        return edep * _EDEP_TO_EV[unit] / eh_pair_eV
+        return edep * _EDEP_TO_EV[unit] / eh_eV
     return float(default_q)
 
 
 # --------------------------------------------------------------------------- #
-# Barrel -> pixel mapping
+# cellID decoder (dd4hep) -- for the segmented VertexBarrelCollection readout
+# --------------------------------------------------------------------------- #
+def build_decoder(compact: str, readout: str):
+    try:
+        import dd4hep
+    except Exception as exc:  # noqa: BLE001
+        die(f"dd4hep needed for cellID decoding ({exc}). Source setup_MAPS.sh.")
+    if not Path(compact).is_file():
+        die(f"--compact geometry file not found: {compact}")
+    print(f"[convert] loading geometry for cellID decoder: {compact}", file=sys.stderr)
+    det = dd4hep.Detector.getInstance()
+    det.fromXML(compact)
+    try:
+        return det.readout(readout).idSpec().decoder()
+    except Exception as exc:  # noqa: BLE001
+        die(f"could not get decoder for readout '{readout}' ({exc}).")
+
+
+# --------------------------------------------------------------------------- #
+# barrel position->pixel fallback (no segmentation)
 # --------------------------------------------------------------------------- #
 class BarrelMapper:
-    """Maps a global (x, y, z) hit position to (COL, ROW) on a barrel layer."""
-
-    def __init__(self, geom: dict):
-        s = geom["sensor"]
-        w = geom["wrapper"]
-        self.pitch_x = s["pixel_pitch_x_um"] / 1000.0  # mm
-        self.pitch_y = s["pixel_pitch_y_um"] / 1000.0  # mm
-        self.radius = float(w["radius_mm"])
-        self.half_length = float(w["half_length_mm"])
-        self.phi0 = float(w.get("phi0", 0.0))
-        self.z0 = float(w.get("z0", 0.0))
-        self.mode = str(w.get("tile_mode", "single")).lower()
-
+    def __init__(self, cfg: dict, pitch_x_mm, pitch_y_mm):
+        self.px, self.py = pitch_x_mm, pitch_y_mm
+        self.radius = float(cfg["radius_mm"])
+        self.half_length = float(cfg["half_length_mm"])
+        self.phi0 = float(cfg.get("phi0", 0.0))
+        self.z0 = float(cfg.get("z0", 0.0))
+        self.mode = str(cfg.get("tile_mode", "wrap")).lower()
         if self.mode == "wrap":
-            circ = 2.0 * math.pi * self.radius
-            self.n_col = int(math.ceil(circ / self.pitch_x))
-            self.n_row = int(math.ceil(2.0 * self.half_length / self.pitch_y))
-            self.size_x = circ
-            self.size_y = 2.0 * self.half_length
-        else:  # "single" tile centred at (phi0, z0)
-            self.n_col = int(s["n_col"])
-            self.n_row = int(s["n_row"])
-            self.size_x = float(s["sensor_size_x_mm"])
-            self.size_y = float(s["sensor_size_y_mm"])
-
-    def map(self, x: float, y: float, z: float):
-        """Return (COL, ROW) or None if the hit falls outside the grid."""
-        phi = math.atan2(y, x)
-
-        if self.mode == "wrap":
-            # phi in [0, 2pi): unrolled circumference is the column axis.
-            phi_pos = phi % (2.0 * math.pi)
-            x_local = self.radius * phi_pos
-            y_local = (z - self.z0) + self.half_length  # 0 .. 2*half_length
+            self.n_col = int(math.ceil(2 * math.pi * self.radius / self.px))
+            self.n_row = int(math.ceil(2 * self.half_length / self.py))
+            self.sx, self.sy = 2 * math.pi * self.radius, 2 * self.half_length
         else:
-            dphi = wrap_to_pi(phi - self.phi0)
-            x_local = self.radius * dphi + self.size_x / 2.0
-            y_local = (z - self.z0) + self.size_y / 2.0
+            self.n_col = int(cfg["n_col"]); self.n_row = int(cfg["n_row"])
+            self.sx = float(cfg["sensor_size_x_mm"]); self.sy = float(cfg["sensor_size_y_mm"])
 
-        col = int(math.floor(x_local / self.pitch_x))
-        row = int(math.floor(y_local / self.pitch_y))
+    def map(self, x, y, z):
+        phi = math.atan2(y, x)
+        if self.mode == "wrap":
+            xl = self.radius * (phi % (2 * math.pi))
+            yl = (z - self.z0) + self.half_length
+        else:
+            dphi = (phi - self.phi0 + math.pi) % (2 * math.pi) - math.pi
+            xl = self.radius * dphi + self.sx / 2.0
+            yl = (z - self.z0) + self.sy / 2.0
+        col, row = int(math.floor(xl / self.px)), int(math.floor(yl / self.py))
         if 0 <= col < self.n_col and 0 <= row < self.n_row:
             return col, row
         return None
 
 
 # --------------------------------------------------------------------------- #
-# Reading SimTrackerHits (podio primary, uproot fallback)
+# podio reader (yields cellID too)
 # --------------------------------------------------------------------------- #
-def iter_events_podio(input_file: str):
-    """Yield (event_index, available_collections, frame) using podio."""
+def iter_events_podio(input_file):
     try:
-        from podio.root_io import Reader  # type: ignore
+        from podio.root_io import Reader
     except Exception:  # noqa: BLE001
-        try:
-            from podio import root_io  # older API
-            Reader = root_io.Reader  # type: ignore
-        except Exception as exc:  # noqa: BLE001
-            raise ImportError(f"podio not usable: {exc}") from exc
-
-    reader = Reader(input_file)
-    frames = reader.get("events")
-    for i, frame in enumerate(frames):
-        yield i, list(frame.getAvailableCollections()), frame
+        from podio import root_io
+        Reader = root_io.Reader
+    for i, fr in enumerate(Reader(input_file).get("events")):
+        yield i, list(fr.getAvailableCollections()), fr
 
 
-def read_hits(input_file: str, collection: str, want_collection: str | None,
-              collections_cfg: dict, max_events: int | None):
-    """
-    Generator yielding dict(event, x, y, z, time_ns, edep) per SimTrackerHit.
-    Also returns, on first event, the chosen collection name (via .chosen attr).
-    Implemented with podio; raises ImportError to let caller try uproot.
-    """
-    chosen = {"name": None, "available": None}
-
-    def _gen():
-        n_events = 0
-        for evt_idx, avail, frame in iter_events_podio(input_file):
-            n_events += 1
-            if chosen["name"] is None:
-                chosen["available"] = avail
-                chosen["name"] = pick_collection(
-                    want_collection, collections_cfg, avail
-                )
-            coll = frame.get(chosen["name"])
-            for h in coll:
-                pos = h.getPosition()
-                yield {
-                    "event": evt_idx,
-                    "x": pos.x, "y": pos.y, "z": pos.z,
-                    "time_ns": h.getTime(),
-                    "edep": h.getEDep(),
-                }
-            if max_events is not None and n_events >= max_events:
-                break
-        chosen["n_events"] = n_events
-
-    return _gen, chosen
-
-
-def pick_collection(want: str | None, cfg: dict, available: list) -> str:
+def pick_collection(want, cfg, available):
     if want:
         if want not in available:
-            die(
-                f"requested collection '{want}' not in file.\n"
-                f"       Available collections: {sorted(available)}"
-            )
+            die(f"collection '{want}' not in file. Available: {sorted(available)}")
         return want
     for cand in cfg["input"]["simhit_collections"]:
         if cand in available:
             return cand
-    die(
-        "no candidate SimTrackerHit collection found in the file.\n"
-        f"       Candidates tried: {cfg['input']['simhit_collections']}\n"
-        f"       Available collections: {sorted(available)}"
-    )
+    die(f"no candidate collection found. Tried {cfg['input']['simhit_collections']}; "
+        f"available {sorted(available)}")
 
 
-# --------------------------------------------------------------------------- #
-# Main
 # --------------------------------------------------------------------------- #
 def parse_args(argv=None):
     p = argparse.ArgumentParser(
-        description="Convert EDM4hep SimTrackerHits to a PixESL CSV "
-                    "(BX,COL,ROW,h_time,qin).",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
-    p.add_argument("--input", required=True,
-                   help="input EDM4hep .root file (podio)")
-    p.add_argument("--output", default="outputs/pixesl_hits_zinclusive.csv",
-                   help="output PixESL CSV path")
-    p.add_argument("--geometry", default="conversion/geometry_config.yaml",
-                   help="geometry/sensor YAML config")
-    p.add_argument("--collections", default="conversion/collections_config.yaml",
-                   help="collections YAML config (priority list)")
-    p.add_argument("--collection", default=None,
-                   help="force a specific SimTrackerHit collection name")
-    p.add_argument("--edep-unit", default="GeV",
-                   choices=list(_EDEP_TO_EV.keys()),
-                   help="unit of SimTrackerHit energy deposit")
-    p.add_argument("--time-unit", default="ns",
-                   choices=list(_TIME_TO_PS.keys()),
-                   help="unit of SimTrackerHit time")
-    p.add_argument("--max-events", type=int, default=None,
-                   help="process at most N events (debug)")
+        description="EDM4hep SimTrackerHits -> PixESL CSV (BX,COL,ROW,h_time,qin).",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    p.add_argument("--input", required=True, help="input EDM4hep .root file")
+    p.add_argument("--output", default="outputs/pixesl_hits.csv", help="output CSV")
+    p.add_argument("--geometry", default="conversion/geometry_config.yaml")
+    p.add_argument("--collections", default="conversion/collections_config.yaml")
+    p.add_argument("--collection", default=None, help="force collection name")
+    p.add_argument("--compact", default=None,
+                   help="ALLEGRO/MAPS compact XML (needed for decode_cellid mode)")
+    p.add_argument("--mode", default=None,
+                   choices=["decode_cellid", "barrel_position"],
+                   help="override target.mode in the geometry YAML")
+    p.add_argument("--edep-unit", default="GeV", choices=list(_EDEP_TO_EV))
+    p.add_argument("--time-unit", default="ns", choices=list(_TIME_TO_PS))
+    p.add_argument("--max-events", type=int, default=None)
+    p.add_argument("--bx-offset", type=int, default=0,
+                   help="add to the per-file event index -> global BX "
+                        "(for condor chunks: chunk*events_per_chunk)")
     return p.parse_args(argv)
 
 
 def main(argv=None):
     args = parse_args(argv)
-
     in_path = Path(args.input)
     if not in_path.is_file():
-        die(f"input file not found: {in_path}")
+        die(f"input not found: {in_path}")
 
     geom = load_yaml(Path(args.geometry))
     coll_cfg = load_yaml(Path(args.collections))
-    mapper = BarrelMapper(geom)
+    tgt = geom.get("target", {})
+    mode = args.mode or tgt.get("mode", "decode_cellid")
+    keep_layers = set(tgt.get("keep_layers", []) or [])
+    want_coll = args.collection or tgt.get("collection")
 
-    tcfg = geom["timing"]
-    ccfg = geom["charge"]
+    s = geom["sensor"]
+    px = s["pixel_pitch_x_um"] / 1000.0
+    py = s["pixel_pitch_y_um"] / 1000.0
+    tcfg, ccfg = geom["timing"], geom["charge"]
     use_event_as_bx = bool(tcfg.get("use_event_as_bx", True))
     bx_spacing_ps = float(tcfg.get("bx_spacing_ps", 0.0))
     eh_eV = float(ccfg.get("eh_pair_energy_eV", 3.6))
     default_q = float(ccfg.get("default_qin_electrons", 1500))
     use_edep = bool(ccfg.get("use_edep_if_available", True))
-    time_scale = _TIME_TO_PS[args.time_unit]
+    tscale = _TIME_TO_PS[args.time_unit]
 
-    # --- read hits (podio, fallback uproot) --------------------------------
-    try:
-        gen_factory, chosen = read_hits(
-            str(in_path), None, args.collection, coll_cfg, args.max_events
-        )
-        hit_iter = gen_factory()
-        backend = "podio"
-    except ImportError:
-        print("[convert] podio not available; falling back to uproot.",
-              file=sys.stderr)
-        hit_iter, chosen, backend = _read_hits_uproot(
-            str(in_path), args.collection, coll_cfg, args.max_events
-        )
+    # ---- decoder / mapper -------------------------------------------------
+    decoder = mapper = None
+    cf = geom.get("cellid", {})
+    if mode == "decode_cellid":
+        if not args.compact:
+            die("mode 'decode_cellid' needs --compact <MAPS_o1_v01.xml> to build "
+                "the cellID decoder. (Or use --mode barrel_position.)")
+        # collection name is needed to fetch the readout decoder
+        decoder = None  # built after we know the collection
+    else:
+        mapper = BarrelMapper(geom["barrel_position"], px, py)
 
-    # --- loop & map --------------------------------------------------------
-    rows = []
+    # ---- read, decode/map, collect ---------------------------------------
+    raw = []          # (bx, xidx_or_col, yidx_or_row, h_time, qin, layer, module, sensor, r, z)
     n_read = n_acc = n_rej = 0
-    events_seen = set()
-    for hit in hit_iter:
-        n_read += 1
-        events_seen.add(hit["event"])
-        mp = mapper.map(hit["x"], hit["y"], hit["z"])
-        if mp is None:
-            n_rej += 1
-            continue
-        col, row = mp
-        bx = hit["event"]
-        hit_time_ps = hit["time_ns"] * time_scale
-        h_time = hit_time_ps if use_event_as_bx else bx * bx_spacing_ps + hit_time_ps
-        qin = edep_to_qin(hit["edep"], args.edep_unit, eh_eV, default_q, use_edep)
-        rows.append((bx, col, row, h_time, qin))
-        n_acc += 1
+    chosen = {"name": None, "available": None}
+    n_events = 0
+    per_layer = {}
 
-    coll_name = chosen.get("name")
-    n_events = chosen.get("n_events", len(events_seen))
+    for evt_idx, avail, frame in iter_events_podio(str(in_path)):
+        n_events += 1
+        if chosen["name"] is None:
+            chosen["available"] = avail
+            chosen["name"] = pick_collection(want_coll, coll_cfg, avail)
+            if mode == "decode_cellid":
+                decoder = build_decoder(args.compact, chosen["name"])
+        for h in frame.get(chosen["name"]):
+            n_read += 1
+            pos = h.getPosition()
+            r = math.hypot(pos.x, pos.y)
+            hit_time_ps = h.getTime() * tscale
+            bx = evt_idx
+            h_time = hit_time_ps if use_event_as_bx else bx * bx_spacing_ps + hit_time_ps
+            qin = edep_to_qin(h.getEDep(), args.edep_unit, eh_eV, default_q, use_edep)
 
-    if coll_name is None:
-        die("could not determine a collection (file had no events?).")
+            if mode == "decode_cellid":
+                cid = h.getCellID()
+                layer = decoder.get(cid, cf.get("field_layer", "layer"))
+                if keep_layers and layer not in keep_layers:
+                    n_rej += 1
+                    continue
+                xidx = decoder.get(cid, cf.get("field_x", "x"))
+                yidx = decoder.get(cid, cf.get("field_y", "y"))
+                module = decoder.get(cid, cf.get("field_module", "module"))
+                sensor = decoder.get(cid, cf.get("field_sensor", "sensor"))
+                raw.append([bx, xidx, yidx, h_time, qin, layer, module, sensor, r, pos.z])
+                per_layer[layer] = per_layer.get(layer, 0) + 1
+                n_acc += 1
+            else:
+                mp = mapper.map(pos.x, pos.y, pos.z)
+                if mp is None:
+                    n_rej += 1
+                    continue
+                col, row = mp
+                raw.append([bx, col, row, h_time, qin, -1, -1, -1, r, pos.z])
+                n_acc += 1
+        if args.max_events is not None and n_events >= args.max_events:
+            break
 
-    # --- sort: BX, h_time, COL, ROW ----------------------------------------
-    rows.sort(key=lambda r: (r[0], r[3], r[1], r[2]))
+    if chosen["name"] is None:
+        die("file had no events.")
+    if n_acc == 0:
+        die(f"0 hits accepted from '{chosen['name']}'. "
+            f"keep_layers={sorted(keep_layers)}; check mode/collection.")
 
-    # --- write CSV ---------------------------------------------------------
-    out_path = Path(args.output)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    with out_path.open("w") as fh:
-        fh.write("BX,COL,ROW,h_time,qin\n")
-        for bx, col, row, h_time, qin in rows:
-            fh.write(f"{bx},{col},{row},{h_time:.3f},{qin:.3f}\n")
+    # ---- shift decoded pixel indices to non-negative COL/ROW --------------
+    col_off = row_off = 0
+    if mode == "decode_cellid":
+        col_off = -min(r[1] for r in raw)
+        row_off = -min(r[2] for r in raw)
+        for r in raw:
+            r[1] += col_off
+            r[2] += row_off
 
-    # --- metadata JSON -----------------------------------------------------
+    # ---- sort BX, h_time, COL, ROW ---------------------------------------
+    raw.sort(key=lambda r: (r[0], r[3], r[1], r[2]))
+
+    # ---- write strict + extended CSV -------------------------------------
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    ext = out.with_name(out.stem + "_extended.csv")
+    with out.open("w") as f, ext.open("w") as fe:
+        f.write("BX,COL,ROW,h_time,qin\n")
+        fe.write("BX,COL,ROW,h_time,qin,layer,module,sensor,r_mm,z_mm\n")
+        for bx, c, rr, ht, q, lay, mod, sen, r, z in raw:
+            f.write(f"{bx},{c},{rr},{ht:.3f},{q:.3f}\n")
+            fe.write(f"{bx},{c},{rr},{ht:.3f},{q:.3f},{lay},{mod},{sen},{r:.3f},{z:.3f}\n")
+
+    # ---- metadata ---------------------------------------------------------
     meta = {
         "input_file": str(in_path.resolve()),
-        "reader_backend": backend,
-        "collection_used": coll_name,
-        "available_collections": sorted(chosen.get("available") or []),
+        "collection_used": chosen["name"],
+        "available_collections": sorted(chosen["available"] or []),
+        "mode": mode,
+        "keep_layers": sorted(keep_layers),
+        "hits_per_layer": {str(k): v for k, v in sorted(per_layer.items())},
         "n_events": n_events,
         "n_simhits_read": n_read,
         "n_hits_accepted": n_acc,
         "n_hits_rejected": n_rej,
-        "pixel_pitch_x_um": geom["sensor"]["pixel_pitch_x_um"],
-        "pixel_pitch_y_um": geom["sensor"]["pixel_pitch_y_um"],
-        "n_col_effective": mapper.n_col,
-        "n_row_effective": mapper.n_row,
-        "sensor_size_x_mm": mapper.size_x,
-        "sensor_size_y_mm": mapper.size_y,
-        "wrapper_radius_mm": mapper.radius,
-        "wrapper_half_length_mm": mapper.half_length,
-        "mapping_mode": mapper.mode,
-        "edep_unit": args.edep_unit,
-        "time_unit": args.time_unit,
-        "use_event_as_bx": use_event_as_bx,
-        "bx_spacing_ps": bx_spacing_ps,
+        "pixel_pitch_x_um": s["pixel_pitch_x_um"],
+        "pixel_pitch_y_um": s["pixel_pitch_y_um"],
+        "col_offset": col_off, "row_offset": row_off,
+        "layers": geom.get("layers", []),
+        "edep_unit": args.edep_unit, "time_unit": args.time_unit,
+        "use_event_as_bx": use_event_as_bx, "bx_spacing_ps": bx_spacing_ps,
         "eh_pair_energy_eV": eh_eV,
         "git_hash": git_hash(),
-        "output_csv": str(out_path.resolve()),
+        "output_csv": str(out.resolve()),
+        "extended_csv": str(ext.resolve()),
     }
-    meta_path = out_path.with_suffix(out_path.suffix + ".metadata.json")
-    if out_path.suffix == ".csv":
-        meta_path = out_path.with_name(out_path.stem + ".metadata.json")
-    with meta_path.open("w") as fh:
-        json.dump(meta, fh, indent=2)
+    meta_path = out.with_name(out.stem + ".metadata.json")
+    meta_path.write_text(json.dumps(meta, indent=2))
 
-    # --- report ------------------------------------------------------------
+    # ---- report -----------------------------------------------------------
     print("=" * 64)
-    print(f"[convert] backend           : {backend}")
-    print(f"[convert] collection used   : {coll_name}")
-    print(f"[convert] events            : {n_events}")
-    print(f"[convert] SimTrackerHits    : {n_read}")
-    print(f"[convert] accepted          : {n_acc}")
-    print(f"[convert] rejected (off-grid): {n_rej}")
-    print(f"[convert] mapping mode      : {mapper.mode} "
-          f"(grid {mapper.n_col} x {mapper.n_row})")
-    print(f"[convert] CSV    -> {out_path}")
-    print(f"[convert] meta   -> {meta_path}")
-    if n_acc == 0:
-        print("[convert] WARNING: 0 hits accepted. If using tile_mode='single', "
-              "try 'wrap' in geometry_config.yaml, or check the collection.",
-              file=sys.stderr)
+    print(f"[convert] collection : {chosen['name']}   mode: {mode}")
+    print(f"[convert] events     : {n_events}")
+    print(f"[convert] SimHits    : {n_read}  accepted: {n_acc}  rejected: {n_rej}")
+    if mode == "decode_cellid":
+        print(f"[convert] kept layers: {sorted(keep_layers)}  "
+              f"hits/layer: {dict(sorted(per_layer.items()))}")
+        print(f"[convert] COL/ROW offsets: +{col_off}/+{row_off}")
+    print(f"[convert] CSV        -> {out}")
+    print(f"[convert] extended   -> {ext}")
+    print(f"[convert] metadata   -> {meta_path}")
     print("=" * 64)
-
-
-# --------------------------------------------------------------------------- #
-# uproot fallback (best-effort; podio is preferred)
-# --------------------------------------------------------------------------- #
-def _read_hits_uproot(input_file, want_collection, coll_cfg, max_events):
-    uproot = require_module(
-        "uproot",
-        "Source the Key4hep stack, or 'pip install uproot awkward'.",
-    )
-    f = uproot.open(input_file)
-    if "events" not in f:
-        die(f"no 'events' TTree in {input_file}. Keys: {f.keys()}")
-    tree = f["events"]
-    branches = [b.split(".")[0] for b in tree.keys()]
-    available = sorted(set(branches))
-    name = pick_collection(want_collection, coll_cfg, available)
-
-    px = tree[f"{name}.position.x"].array(library="np")
-    py = tree[f"{name}.position.y"].array(library="np")
-    pz = tree[f"{name}.position.z"].array(library="np")
-    # time / EDep branch names vary slightly across edm4hep versions
-    tarr = _first_branch(tree, [f"{name}.time", f"{name}.t"])
-    earr = _first_branch(tree, [f"{name}.EDep", f"{name}.eDep", f"{name}.energy"])
-
-    chosen = {"name": name, "available": available,
-              "n_events": len(px) if max_events is None else min(max_events, len(px))}
-
-    def _gen():
-        n = len(px)
-        if max_events is not None:
-            n = min(n, max_events)
-        for evt in range(n):
-            xs, ys, zs = px[evt], py[evt], pz[evt]
-            ts = tarr[evt] if tarr is not None else [0.0] * len(xs)
-            es = earr[evt] if earr is not None else [0.0] * len(xs)
-            for j in range(len(xs)):
-                yield {"event": evt, "x": xs[j], "y": ys[j], "z": zs[j],
-                       "time_ns": ts[j], "edep": es[j]}
-
-    return _gen(), chosen, "uproot"
-
-
-def _first_branch(tree, names):
-    for n in names:
-        if n in tree:
-            return tree[n].array(library="np")
-    return None
 
 
 if __name__ == "__main__":

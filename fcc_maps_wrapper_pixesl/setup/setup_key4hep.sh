@@ -11,9 +11,17 @@
 #   K4RECO_DIR=/gpfs/.../Allegro/k4Reco       source setup/setup_key4hep.sh
 #
 # Environment knobs (all optional, set before sourcing):
-#   KEY4HEP_SETUP  CVMFS setup script (default: stable sw.hsf.org)
-#   LOCAL_K4GEO    directory containing FCCee/  -> overrides K4GEO (editable geom)
-#   K4RECO_DIR     a locally-built k4 repo (e.g. k4Reco) -> runs `k4_local_repo`
+#   KEY4HEP_SETUP   CVMFS setup script (default: stable sw.hsf.org)
+#   KEY4HEP_RELEASE pin a release date -> `-r <date>` (reproducible)
+#   K4GEO_DIR       a locally-BUILT k4geo repo -> `k4_local_repo` (compiled plugins
+#                   like VertexBarrel_detailed_o1_v03 that a fixed stable stack lacks)
+#   K4GEO_BUILD=1   build K4GEO_DIR first (one-time cmake build), then register it
+#   LOCAL_K4GEO     directory containing FCCee/ -> sets K4GEO to editable source XML
+#   K4RECO_DIR      a locally-built k4 repo (e.g. k4Reco) -> runs `k4_local_repo`
+#
+# Why both K4GEO_DIR and LOCAL_K4GEO? k4geo = compiled plugins (from the BUILD,
+# via K4GEO_DIR/k4_local_repo) + XML data (from the SOURCE tree, via LOCAL_K4GEO).
+# So you get the right plugins AND live-editable XML (no reinstall to edit XML).
 #
 # After sourcing, the following are printed and saved to
 #   outputs/environment_used.txt
@@ -59,39 +67,70 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Optional: override K4GEO with a local editable clone.
-#   LOCAL_K4GEO should point at the directory that contains FCCee/ALLEGRO/...
-#   For a git clone of k4geo this is usually:   <clone>/k4geo   (the share dir)
-#   i.e. the dir holding "FCCee". We sanity-check that below.
+# Helper: run `k4_local_repo` in the CURRENT shell (cd in, run, cd back).
+#   It must run from inside the repo dir AND its env exports must persist, so a
+#   subshell ( ... ) would silently lose them -- save/restore $PWD instead.
 # ---------------------------------------------------------------------------
-if [ -n "${LOCAL_K4GEO:-}" ]; then
-    if [ -d "${LOCAL_K4GEO}/FCCee/ALLEGRO" ]; then
-        export K4GEO="${LOCAL_K4GEO}"
-        echo "[setup] Overriding K4GEO with local clone: $K4GEO"
+_k4_register() {            # $1 = repo dir, $2 = label
+    local _dir="$1" _label="$2" _save="$PWD"
+    if ! command -v k4_local_repo >/dev/null 2>&1; then
+        echo "[setup] WARNING: k4_local_repo not available; skipping ${_label}." >&2
+        return 0
+    fi
+    echo "[setup] Registering ${_label} via k4_local_repo: ${_dir}"
+    cd "${_dir}" || { echo "[setup] WARNING: cannot cd ${_dir}" >&2; return 1; }
+    k4_local_repo || echo "[setup] WARNING: k4_local_repo for ${_label} failed (built?)." >&2
+    cd "${_save}" || true
+}
+
+# ---------------------------------------------------------------------------
+# Optional: build the local k4geo fork once (K4GEO_BUILD=1). Needs the stack's
+# cmake/dd4hep, which we just sourced above.
+# ---------------------------------------------------------------------------
+if [ "${K4GEO_BUILD:-0}" = "1" ] && [ -n "${K4GEO_DIR:-}" ] && [ -d "${K4GEO_DIR}" ]; then
+    echo "[setup] Building local k4geo (one-time): ${K4GEO_DIR}"
+    ( cd "${K4GEO_DIR}" \
+        && cmake -B build -S . -DCMAKE_INSTALL_PREFIX="${K4GEO_DIR}/install" \
+        && cmake --build build -j"${K4GEO_BUILD_JOBS:-8}" --target install ) \
+        || echo "[setup] ERROR: k4geo build failed (see output above)." >&2
+fi
+
+# ---------------------------------------------------------------------------
+# Register a locally-BUILT k4geo (compiled plugins) then k4Reco. Order matters:
+# do these BEFORE the LOCAL_K4GEO override so the source-tree XML wins for K4GEO.
+# ---------------------------------------------------------------------------
+if [ -n "${K4GEO_DIR:-}" ]; then
+    if [ ! -d "${K4GEO_DIR}" ]; then
+        echo "[setup] WARNING: K4GEO_DIR does not exist: ${K4GEO_DIR}" >&2
+    elif find "${K4GEO_DIR}" -maxdepth 5 -name 'libk4geo*.so*' -print -quit 2>/dev/null | grep -q .; then
+        _k4_register "${K4GEO_DIR}" "local k4geo build"
     else
-        echo "[setup] WARNING: LOCAL_K4GEO is set but '${LOCAL_K4GEO}/FCCee/ALLEGRO' was not found." >&2
-        echo "[setup]          Falling back to CVMFS K4GEO: ${K4GEO}" >&2
-        echo "[setup]          (LOCAL_K4GEO should be the directory that contains 'FCCee/'.)" >&2
+        echo "[setup] NOTE: K4GEO_DIR set but k4geo is not built (no libk4geo found)." >&2
+        echo "[setup]       Build once:  source setup_MAPS.sh --build-k4geo" >&2
+        echo "[setup]       (needed for _o1_v03 plugins on a fixed stable stack)" >&2
+    fi
+fi
+
+if [ -n "${K4RECO_DIR:-}" ]; then
+    if [ -d "${K4RECO_DIR}" ]; then
+        _k4_register "${K4RECO_DIR}" "local k4Reco"
+    else
+        echo "[setup] WARNING: K4RECO_DIR does not exist: ${K4RECO_DIR}" >&2
     fi
 fi
 
 # ---------------------------------------------------------------------------
-# Optional: register a locally-built k4 repository (e.g. k4Reco) so its
-# libraries/algorithms take precedence over the CVMFS ones.
-#   `k4_local_repo` is a helper provided by the Key4hep stack; it must be run
-#   from inside the local repo directory.
+# Point K4GEO at the editable SOURCE-tree XML LAST, so live XML edits take
+# effect with no reinstall. Compiled plugins still come from the build that
+# k4_local_repo put on LD_LIBRARY_PATH above.
+#   LOCAL_K4GEO must be the directory that contains FCCee/ (e.g. <clone>/k4geo).
 # ---------------------------------------------------------------------------
-if [ -n "${K4RECO_DIR:-}" ]; then
-    if [ -d "${K4RECO_DIR}" ]; then
-        if command -v k4_local_repo >/dev/null 2>&1; then
-            echo "[setup] Registering local repo via k4_local_repo: $K4RECO_DIR"
-            ( cd "${K4RECO_DIR}" && k4_local_repo ) || \
-                echo "[setup] WARNING: k4_local_repo returned non-zero (is it built/installed?)." >&2
-        else
-            echo "[setup] WARNING: k4_local_repo not available in this stack; skipping K4RECO_DIR." >&2
-        fi
+if [ -n "${LOCAL_K4GEO:-}" ]; then
+    if [ -d "${LOCAL_K4GEO}/FCCee/ALLEGRO" ]; then
+        export K4GEO="${LOCAL_K4GEO}"
+        echo "[setup] K4GEO -> local source XML: $K4GEO"
     else
-        echo "[setup] WARNING: K4RECO_DIR does not exist: ${K4RECO_DIR}" >&2
+        echo "[setup] WARNING: LOCAL_K4GEO set but '${LOCAL_K4GEO}/FCCee/ALLEGRO' not found; keeping K4GEO=${K4GEO}" >&2
     fi
 fi
 
@@ -106,6 +145,7 @@ fi
     echo "KEY4HEP_STACK=${KEY4HEP_STACK:-<unset>}"
     echo "K4GEO=${K4GEO:-<unset>}"
     echo "LOCAL_K4GEO=${LOCAL_K4GEO:-<unset>}"
+    echo "K4GEO_DIR=${K4GEO_DIR:-<unset>}"
     echo "K4RECO_DIR=${K4RECO_DIR:-<unset>}"
     echo
     echo "ddsim=$(command -v ddsim || echo '<not found>')"
