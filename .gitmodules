@@ -1,11 +1,12 @@
 [submodule "FCCAnalyses"]
 	path = FCCAnalyses
   	url = git@github.com:Ang-Li-93/FCCAnalyses.git
-  	branch = AngDevOld
+  	branch = AngDev
 
 [submodule "FCCAnalyses-winter2023"]
 	path = FCCAnalyses-winter2023
 	url = git@github.com:Ang-Li-93/FCCAnalyses.git
+	
 [submodule "FCC-config/winter2023"]
 	path = FCC-config/winter2023
 	url = git@github.com:Ang-Li-93/FCC-config.git
@@ -13,7 +14,7 @@
 [submodule "EventProducer"]
 	path = EventProducer
 	url = git@github.com:Ang-Li-93/EventProducer.git
-	branch = master
+	branch = SDCC
 [submodule "CLDConfig"]
 	path = CLDConfig
 	url = git@github.com:Ang-Li-93/CLDConfig.git
