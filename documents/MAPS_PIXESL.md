@@ -198,10 +198,13 @@ Produced 10,000 events (200 condor jobs × 50) → **405,389 VTXOB hits**, harve
   frame, see `occupancy_vs_window.pdf`). The design-driving occupancy will come from
   **beam-induced background** (incoherent pairs) — a separate study.
 
-Plots (PDF, kept in the repo at **`plots/qq_10k/`**):
+Results — plots (PNG + PDF) and the PixESL CSVs — are collected in
+**`fcc_maps_wrapper_pixesl/results/qq_10k/`** (git-ignored, not committed) and
+published at **https://angli-share.web.cern.ch/FCC/MAPS/** :
 - readout: `occupancy_vs_window`, `occupancy_per_layer`, `rate_per_layer`, `hitdensity_vs_z`
 - distributions: `occupancy_map_L3/L4`, `qin_hist`, `h_time_hist`(+`_full`),
   `hits_per_event`, `rz_hitmap`, `hits_per_layer`
+- data: `pixesl_qq_10k.csv` (strict `BX,COL,ROW,h_time,qin`), `_extended.csv`, `*.metadata.json`
 
 5-event spot check (earlier): confirmed 20 µm cellID decode, the two cylinders at
 130/315 mm in r-z, and the two TOF peaks (~0.45 / ~1.05 ns) in `h_time`.
@@ -231,8 +234,9 @@ Plots (PDF, kept in the repo at **`plots/qq_10k/`**):
 - **Memory**: ALLEGRO full sim actually peaks **~7.3 GB** (the earlier "3 GB" was just the
   cgroup *kill* point). SDCC hard-enforces `request_memory` via cgroups → set **≥8 GB**
   (held jobs report "over cgroup memory limit"). `should_transfer_files = NO` (shared gpfs).
-- Keep small artifacts (PDF plots) **in this repo** (`plots/`); put bulk data
-  (edm4hep, stdhep, the merged CSV) in **`/gpfs/.../MAPS_storage/`**.
+- Results (plots + PixESL CSVs) are collected in `results/` (git-ignored, not
+  committed) and published at **https://angli-share.web.cern.ch/FCC/MAPS/** ; bulk
+  sim data (edm4hep, stdhep, the merged CSV) lives in **`/gpfs/.../MAPS_storage/`**.
 
 ---
 

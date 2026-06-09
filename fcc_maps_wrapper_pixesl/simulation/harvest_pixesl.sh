@@ -21,7 +21,7 @@ COMPACT="${COMPACT:-${REPO_ROOT}/k4geo/FCCee/BNL_MAPS/compact/MAPS_o1_v01/MAPS_o
 GEOMETRY="${GEOMETRY:-${PKG}/conversion/geometry_config.yaml}"
 COLLECTIONS="${COLLECTIONS:-${PKG}/conversion/collections_config.yaml}"
 FINAL_CSV="${FINAL_CSV:-/gpfs/mnt/gpfs01/usfcc/MAPS_storage/pixesl_qq_10k.csv}"   # large data -> MAPS_storage
-PLOTDIR="${PLOTDIR:-${PKG}/plots/qq_10k}"   # small PDFs -> kept in the repo
+PLOTDIR="${PLOTDIR:-${PKG}/results/qq_10k}"  # plots + CSV; git-ignored, published to angli-share.web.cern.ch/FCC/MAPS
 
 command -v python >/dev/null 2>&1 || { echo "ERROR: source setup_MAPS.sh first" >&2; exit 1; }
 N=$(ls "${OUTDIR}"/events_*.edm4hep.root 2>/dev/null | wc -l)
@@ -39,4 +39,8 @@ if [ "${1:-}" = "--plot" ]; then
     python "${PKG}/analysis/plot_readout_metrics.py" "${FINAL_CSV%.csv}_extended.csv" --outdir "$PLOTDIR"
     echo "[harvest] plots -> $PLOTDIR"
 fi
-echo "[harvest] data CSV -> $FINAL_CSV   (plots in repo: $PLOTDIR)"
+# collect the CSV deliverables next to the plots (results/ is git-ignored, published to the share site)
+mkdir -p "$PLOTDIR"
+cp -p "$FINAL_CSV" "${FINAL_CSV%.csv}_extended.csv" "${FINAL_CSV%.csv}.metadata.json" "$PLOTDIR"/ 2>/dev/null || true
+echo "[harvest] results (plots + CSV) -> $PLOTDIR  (upload to https://angli-share.web.cern.ch/FCC/MAPS/)"
+echo "[harvest] bulk CSV master copy -> $FINAL_CSV"

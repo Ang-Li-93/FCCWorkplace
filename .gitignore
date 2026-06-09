@@ -105,3 +105,5 @@ analysis/test/
 # Kerberos / credentials #
 ##########################
 lia.cc
+# Analysis results (plots + CSV) are hosted externally, not in git
+fcc_maps_wrapper_pixesl/results/
