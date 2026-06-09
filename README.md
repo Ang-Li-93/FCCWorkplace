@@ -1,103 +1,53 @@
 # FCCWorkplace
-FCC workplace
-## Installation of Software
 
-- [FCCWorkplace](https://github.com/Ang-Li-93/FCCWorkplace)
+Superproject (umbrella git repo) for FCC-ee work at BNL/SDCC: physics analyses,
+fast-sim and full-sim MC production, and the detector/analysis frameworks they
+depend on — all wired together as git submodules with per-task environment
+scripts.
 
-I am in the process of simplifing these two repos.
-
-Follow the instructions step-by-step.
-
-### Clone the repository
-
-```shell=
+```shell
 git clone --recurse-submodules git@github.com:Ang-Li-93/FCCWorkplace.git
 cd FCCWorkplace
-```
-
-### Setup
-
-A single entrypoint sources Key4hep, builds FCCAnalyses if needed, and
-creates/activates a local Python venv layered on Key4hep (so packages
-like `sklearn`, `xgboost`, `uproot` are available alongside the
-Key4hep stack).
-
-```shell=
 source setup.sh
 ```
 
-Options:
+## Structure
 
-| Flag | Effect |
-|---|---|
-| `--rebuild-fcc`  | Force rebuild of FCCAnalyses |
-| `--rebuild-venv` | Force rebuild of the local Python venv |
-| `--rebuild`      | Both of the above |
-| `--help`         | Show usage |
+```
+FCCWorkplace/
+  analysis/                 physics analyses: Hbs, HiggsInvisible, HiggsMass, ZH_XSec
+  fcc_maps_wrapper_pixesl/  MAPS vertex -> PixESL full-sim subproject (docs in documents/)
+  tools/  python/           shared helpers (kinematics, plotting, configs)
+  documents/                detailed documentation (linked below)
+  outputs/                  local scratch / logs
 
-After each login, just rerun `source setup.sh`.
+  setup.sh                  analysis environment (default)
+  setup_hbs.sh              H->bs winter2023 legacy environment
+  setup_winter2023.sh       winter2023 fast-sim MC production environment
+  setup_MAPS.sh             ALLEGRO/BNL_MAPS full-sim environment
+  run_combine.sh            CMS Combine via FCCSW Singularity image
 
-### Hbs (H→bs) environment — winter2023 samples only
-
-The H→bs analysis (under `analysis/Hbs/`) uses the same winter2023
-samples as the other analyses, but its **flavor-tagging pipeline** is
-incompatible with the current Key4hep stack. The renames in EDM4hep 1.0
-(`TrackerHitData` → `TrackerHit3DData`) and the FCCAnalyses changes in
-PR [#481](https://github.com/HEP-FCC/FCCAnalyses/pull/481) (new
-`TrackDqdxHandler` requiring a `_<dNdx>_track` association absent from
-winter2023) both break the `JetFlavourHelper` on these samples.
-
-The FCCAnalyses maintainer Juraj Smiesko documented the official
-workaround in the FCCSW forum:
-[FCC tutorial 2.4.2 — TrackerHitData error](https://fccsw-forum.web.cern.ch/t/fcc-tutorial-2-4-2-part-ii-produce-a-flat-tree-and-analyse-events-error-no-member-named-trackerhitdata-in-namespace-edm4hep/253/2):
-use the older Key4hep stack `2024-03-10` together with the
-`pre-edm4hep1` branch of FCCAnalyses. We pin a commit (`af5cf61`) that
-also carries our `HiggsTools` and Z-builder additions, so the Hbs
-script uses the same API as ZH_XSec / HiggsMass.
-
-This lives in a separate submodule (`FCCAnalyses-winter2023/`) and a
-parallel setup script — they do not interfere with `setup.sh`.
-
-```shell=
-source setup_hbs.sh
-fccanalysis run analysis/Hbs/mumu/analysis_stage1_batch.py
+  <submodules — see "Related projects">
 ```
 
-Same flags as `setup.sh` (`--rebuild-fcc`, `--rebuild-venv`,
-`--rebuild`, `--help`). The Hbs venv lives in `local_env_winter2023/`
-and the FCCAnalyses build under `FCCAnalyses-winter2023/build/`.
+## Related projects (submodules)
 
-When a winter2023-replacement sample campaign lands (planned by the
-FCC team), this whole side environment becomes obsolete: switch the
-Hbs `processList` to the new samples and run everything from
-`setup.sh`.
+All are personal forks (`Ang-Li-93/*`) pinned to a branch, cloned via SSH.
 
-### Generating winter2023 IDEA fast-sim MC (production)
+| Submodule | Branch | Role |
+|---|---|---|
+| `FCCAnalyses` | `AngDev` | Main FCC-ee analysis framework (used by `setup.sh`) |
+| `FCCAnalyses-winter2023` | `pre-edm4hep1` | Legacy FCCAnalyses for H→bs on winter2023 (used by `setup_hbs.sh`) |
+| `FCC-config/winter2023` | `winter2023` | Generator cards (WHIZARD/Pythia `.sin`, Delphes/IDEA tcl) |
+| `EventProducer` | `SDCC` | Fast-sim MC production driver, patched for SDCC |
+| `CLDConfig` | `main` | CLD detector configuration |
+| `k4geo` | — | Geometry, including the `BNL_MAPS` detector for the MAPS project |
+| `k4Reco` | — | Key4hep reconstruction algorithms |
 
-To *produce* winter2023 FCC-ee fast-sim samples (WHIZARD/Pythia → stdhep →
-Delphes/IDEA → EDM4hep) on SDCC via the `EventProducer` submodule, use the
-production entrypoint:
+## Documentation
 
-```shell=
-source setup_winter2023.sh
-```
-
-The full two-step chain (generator + Delphes/IDEA reco), the H→bs card choices,
-the SDCC-specific adaptations, and the condor/stack gotchas are documented in
-[WINTER2023_FASTSIM.md](WINTER2023_FASTSIM.md). The reco runs on the
-`2024-03-10` (pre-edm4hep1) stack so its output is readable by the `setup_hbs.sh`
-analysis above.
-
-### Combine
-
-The CMS `HiggsAnalysis-CombinedLimit` submodule has been removed in
-favour of the FCCSW Singularity image. Use the wrapper:
-
-```shell=
-./run_combine.sh combine -M MultiDimFit datacard.root
-./run_combine.sh text2workspace.py datacard.txt
-```
-
-Override the image with `COMBINE_IMG=/path/to/other.sif` if needed.
-
-[Note](https://codimd.web.cern.ch/v-2loZ2BSmSurcYI1v-Nkg?both)
+- [documents/SETUP.md](documents/SETUP.md) — the analysis environment (`setup.sh`), venv, options, and the four non-mixable environments
+- [documents/HBS_ENVIRONMENT.md](documents/HBS_ENVIRONMENT.md) — `setup_hbs.sh`: the H→bs winter2023 legacy stack and why it exists
+- [documents/WINTER2023_FASTSIM.md](documents/WINTER2023_FASTSIM.md) — `setup_winter2023.sh`: generating winter2023 IDEA fast-sim MC on SDCC
+- [documents/COMBINE.md](documents/COMBINE.md) — `run_combine.sh`: CMS Combine via the FCCSW Singularity image
+- [documents/MAPS_PIXESL.md](documents/MAPS_PIXESL.md) — the MAPS vertex → PixESL full-sim workflow (`setup_MAPS.sh`, `fcc_maps_wrapper_pixesl/`)
