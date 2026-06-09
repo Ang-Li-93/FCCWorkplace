@@ -72,6 +72,22 @@ FCC team), this whole side environment becomes obsolete: switch the
 Hbs `processList` to the new samples and run everything from
 `setup.sh`.
 
+### Generating winter2023 IDEA fast-sim MC (production)
+
+To *produce* winter2023 FCC-ee fast-sim samples (WHIZARD/Pythia → stdhep →
+Delphes/IDEA → EDM4hep) on SDCC via the `EventProducer` submodule, use the
+production entrypoint:
+
+```shell=
+source setup_winter2023.sh
+```
+
+The full two-step chain (generator + Delphes/IDEA reco), the H→bs card choices,
+the SDCC-specific adaptations, and the condor/stack gotchas are documented in
+[WINTER2023_FASTSIM.md](WINTER2023_FASTSIM.md). The reco runs on the
+`2024-03-10` (pre-edm4hep1) stack so its output is readable by the `setup_hbs.sh`
+analysis above.
+
 ### Combine
 
 The CMS `HiggsAnalysis-CombinedLimit` submodule has been removed in
