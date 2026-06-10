@@ -24,13 +24,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "conversion"))
 import convert_simhits_to_pixesl as C   # noqa: E402
 
 # ordered categories: (key, label, colour, marker size, z-order)
+# ATLAS-ITk colour scheme: outer tracker BLUE, inner pixels RED, MAPS = boldest red.
 CATS = [
-    ("DCHCollection",          "Drift chamber",          "#9ecae1", 0.5, 1),
+    ("DCHCollection",          "Drift chamber",          "#9ecae1", 0.6, 1),
     ("SiWrBCollection",        "Si wrapper (barrel)",    "#08519c", 3.0, 3),
     ("SiWrDCollection",        "Si wrapper (disks)",     "#08519c", 3.0, 3),
-    ("VertexEndcapCollection", "Vertex endcap",          "#2ca02c", 3.0, 4),
-    ("VTXIB",                  "Vertex barrel (VTXIB)",  "#ff7f0e", 3.0, 5),
-    ("VTXOB",                  "MAPS VTXOB (L3,4 · 20 µm)", "#d62728", 9.0, 6),
+    ("VertexEndcapCollection", "Vertex endcap",          "#fb6a4a", 3.0, 4),
+    ("VTXIB",                  "Vertex barrel (VTXIB)",  "#fb6a4a", 3.0, 5),
+    ("VTXOB",                  "MAPS VTXOB (L3,4 · 20 µm)", "#a50f15", 11.0, 6),
 ]
 COLL_CODE = {"DCHCollection": 0, "SiWrBCollection": 1, "SiWrDCollection": 2,
              "VertexEndcapCollection": 3}   # VertexBarrel -> 4 (VTXIB) or 5 (VTXOB)
@@ -98,6 +99,7 @@ def main(argv=None):
     ap.add_argument("--nfiles", type=int, default=200)
     ap.add_argument("--mode", choices=["layout", "occupancy", "both"], default="both")
     ap.add_argument("--format", nargs="+", default=["pdf", "png"])
+    ap.add_argument("--cmap", default="turbo", help="occupancy colormap (e.g. turbo, viridis, jet)")
     ap.add_argument("--refresh", action="store_true", help="force re-read (ignore cache)")
     args = ap.parse_args(argv)
 
@@ -151,7 +153,7 @@ def main(argv=None):
     if args.mode in ("occupancy", "both"):
         rcm = np.clip(r, 1.0, None) / 10.0
         w = 1.0 / (2 * math.pi * rcm) / n_events       # cylinder areal weight, per event
-        cmap = plt.cm.inferno.copy(); cmap.set_bad("white")
+        cmap = plt.get_cmap(args.cmap).copy(); cmap.set_bad("white")
 
         def occ_fig(zlim, rlim, nz, nr, stem, region, equal):
             zedges = np.linspace(0, zlim, nz + 1); redges = np.linspace(0, rlim, nr + 1)
