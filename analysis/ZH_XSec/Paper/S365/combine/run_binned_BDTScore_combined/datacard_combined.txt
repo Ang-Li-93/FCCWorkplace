@@ -1,0 +1,24 @@
+Combination of mumu=run_binned_BDTScore_mumu/datacard_binned_mumu.txt  ee=run_binned_BDTScore_ee/datacard_binned_ee.txt
+imax 2 number of bins
+jmax 1 number of processes minus 1
+kmax 4 number of nuisance parameters
+----------------------------------------------------------------------------------------------------------------------------------
+shapes *     ee    /gpfs/mnt/gpfs01/usfcc/ali3/FCCWorkplace/analysis/ZH_XSec/Paper/S365/combine/run_binned_BDTScore_ee/datacard.root $PROCESS $PROCESS_$SYSTEMATIC
+shapes *     mumu  /gpfs/mnt/gpfs01/usfcc/ali3/FCCWorkplace/analysis/ZH_XSec/Paper/S365/combine/run_binned_BDTScore_mumu/datacard.root $PROCESS $PROCESS_$SYSTEMATIC
+----------------------------------------------------------------------------------------------------------------------------------
+bin          mumu   ee   
+observation  -1     -1   
+----------------------------------------------------------------------------------------------------------------------------------
+bin                               mumu        mumu        ee          ee        
+process                           signal      background  signal      background
+process                           0           1           0           1         
+rate                              -1          -1          -1          -1        
+----------------------------------------------------------------------------------------------------------------------------------
+BES                     shape     1.0         -           1.0         -         
+ELSCALE                 shape     -           -           1.0         -         
+MUSCALE                 shape     1.0         -           -           -         
+SQRTS                   shape     1.0         -           1.0         -         
+background_norm  rateParam mumu background 1 
+bkg_norm      rateParam ee background 1 
+mumu autoMCStats 0 1 1
+ee autoMCStats 0 1 1

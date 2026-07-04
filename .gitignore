@@ -112,3 +112,4 @@ analysis/Hbs/mumu/Jet_Checks/plots/
 lia.cc
 # Analysis results (plots + CSV) are hosted externally, not in git
 fcc_maps_wrapper_pixesl/results/
+HiggsAnalysis/
