@@ -65,8 +65,13 @@ _fccana_setup() {
 }
 _fccana_setup
 unset -f _fccana_setup
+
 export LOCAL_DIR="$HBS_LOCAL_DIR"  # restore after FCCAnalyses overrode it
 cd "$LOCAL_DIR"
+# export LOCAL_DIR="$FCCANA_DIR"
+#export FCCAnalyses=1  
+# cd "$HBS_LOCAL_DIR"
+
 
 # Local Python venv, separate from setup.sh's local_env/ (different Key4hep
 # Python; binaries are not cross-compatible).

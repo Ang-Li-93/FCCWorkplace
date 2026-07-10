@@ -22,7 +22,7 @@ processList = {
     "wzp6_gaga_mumu_60_ecm240":{'chunks':20},
     "wzp6_gaga_tautau_60_ecm240":{'chunks':20},
     "wzp6_ee_nuenueZ_ecm240":{'chunks':20},
-    ##test
+    #test
     #"wzp6_ee_mumuH_ecm240":{'fraction':0.02},
     }
 #Mandatory: Production tag when running over EDM4Hep centrally produced events, this points to the yaml files for getting sample statistics

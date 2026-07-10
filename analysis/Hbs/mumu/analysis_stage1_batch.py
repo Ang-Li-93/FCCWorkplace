@@ -6,34 +6,53 @@ import os, copy, urllib.request
 
 processList = {
     #background
-    'wzp6_ee_mumuH_ecm240':           {'chunks': 10, 'fraction':0.10},
-    #signal
-    'wzp6_ee_mumuH_Hbs_ecm240':       {'chunks': 10, 'fraction':0.10},
-    #Check
-    'wzp6_ee_mumuH_Hbb_ecm240':       {'chunks': 10, 'fraction':0.10},
+    'wzp6_ee_mumuH_ecm240':           {'chunks': 20},#, 'fraction':0.01},
 
-    #'p8_ee_WW_mumu_ecm240':           {'chunks': 10},
-    #'wzp6_egamma_eZ_Zmumu_ecm240':    {'chunks': 10},
-    #'wzp6_gammae_eZ_Zmumu_ecm240':    {'chunks': 10},
-    #'wzp6_ee_mumu_ecm240':            {'chunks': 10},
-    #'p8_ee_ZZ_ecm240':                {'chunks': 10},
-    #'wzp6_gaga_mumu_60_ecm240':       {'chunks': 10},
+    'p8_ee_WW_ecm240':                {'chunks': 80},#, 'fraction':0.10},
+    'wzp6_egamma_eZ_Zmumu_ecm240':    {'chunks': 20},#, 'fraction':0.10},
+    'wzp6_gammae_eZ_Zmumu_ecm240':    {'chunks': 20},#, 'fraction':0.10},
+    'wzp6_ee_mumu_ecm240':            {'chunks': 20},#, 'fraction':0.10},
+    'p8_ee_ZZ_ecm240':                {'chunks': 20},#, 'fraction':0.10},
+    'wzp6_gaga_mumu_60_ecm240':       {'chunks': 20},#, 'fraction':0.10},
+
+    #Diagonal Higgs Decays
+    'wzp6_ee_mumuH_Hbb_ecm240':       {'chunks': 20},#, 'fraction':0.01},
+    'wzp6_ee_mumuH_Hss_ecm240':        {'chunks': 20},#, 'fraction':0.01},
+    'wzp6_ee_mumuH_Hcc_ecm240':        {'chunks': 20},#, 'fraction':0.01},
+    'wzp6_ee_mumuH_Hgg_ecm240':       {'chunks': 20},#, 'fraction':0.01},
+    'wzp6_ee_mumuH_HWW_ecm240':       {'chunks': 20},#, 'fraction':0.01},
+    'wzp6_ee_mumuH_HZZ_ecm240':       {'chunks': 20},#, 'fraction':0.01},
+    'wzp6_ee_mumuH_HZa_ecm240':       {'chunks': 20},#, 'fraction':0.01},
+    'wzp6_ee_mumuH_HZZ_noInv_ecm240':   {'chunks': 20},
+    'wzp6_ee_mumuH_Htautau_ecm240':     {'chunks': 20},
+
+    #Old Testing backgrounds
+    #'p8_ee_WW_mumu_ecm240':           {'chunks': 10},#, 'fraction':0.10},
+
+
 }
 
+#check the training website samples
 prodTag     = "FCCee/winter2023/IDEA/"
-outputDirEos = "/eos/user/l/lia/FCCee/Hbs/mumu/firstlook/"
+outputDirEos = "/eos/user/d/dduan/FCCee/Hbs/mumu/batch_3"
 eosType     = "eosuser"
 nCPUS       = 4
-batchQueue  = "longlunch"
+batchQueue  = 'workday' #"longlunch"
 compGroup   = "group_u_FCC.local_gen"
-runBatch = False
+runBatch = True
 
-outputDir= "/afs/cern.ch/user/d/dduan/private/FCCWorkplace/analysis/Hbs/mumu/ROOT_Files"
+outputDir = "/eos/user/d/dduan/FCCee/Hbs/mumu/temp_files"
+#outputDir= "/afs/cern.ch/user/d/dduan/private/FCCWorkplace/analysis/Hbs/mumu/ROOT_Files"
 
 ## ParticleNet flavor tagger model (winter2023), trained on 9M jets
-model_name    = "fccee_flavtagging_edm4hep_wc_v1"
-url_model_dir = "https://fccsw.web.cern.ch/fccsw/testsamples/jet_flavour_tagging/winter2023/wc_pt_13_01_2022/"
-model_dir     = "/eos/experiment/fcc/ee/jet_flavour_tagging/winter2023/wc_pt_13_01_2022/"
+model_name = 'fccee_flavtagging_edm4hep_wc'
+url_model_dir = "https://fccsw.web.cern.ch/fccsw/testsamples/jet_flavour_tagging/winter2023/wc_pt_7classes_12_04_2023/"
+model_dir = '/eos/experiment/fcc/ee/jet_flavour_tagging/winter2023/wc_pt_7classes_12_04_2023/'
+
+#Old Model without u and d tags
+# model_name    = "fccee_flavtagging_edm4hep_wc_v1"
+# url_model_dir = "https://fccsw.web.cern.ch/fccsw/testsamples/jet_flavour_tagging/winter2023/wc_pt_13_01_2022/"
+# model_dir     = "/eos/experiment/fcc/ee/jet_flavour_tagging/winter2023/wc_pt_13_01_2022/"
 
 def get_file_path(url, filename):
     if os.path.exists(filename):
@@ -197,6 +216,19 @@ class RDFanalysis():
         df = df.Define("btag_max",    "std::max(jet1_btag, jet2_btag)")
         df = df.Define("stag_other",  "jet1_btag > jet2_btag ? jet2_stag : jet1_stag")
 
+        #We want more than just b and s tags, our events include much more than that. 
+        #At risk of overdoing it, lets include all of them:
+        df = df.Define("jet1_utag",   "recojet_isU[0]")
+        df = df.Define("jet2_utag",   "recojet_isU[1]")
+        df = df.Define("jet1_dtag",   "recojet_isD[0]")
+        df = df.Define("jet2_dtag",   "recojet_isD[1]")
+        df = df.Define("jet1_ctag",   "recojet_isC[0]")
+        df = df.Define("jet2_ctag",   "recojet_isC[1]")
+        df = df.Define("jet1_Gtag",   "recojet_isG[0]")
+        df = df.Define("jet2_Gtag",   "recojet_isG[1]")
+        df = df.Define("jet1_tautag",   "recojet_isTAU[0]")
+        df = df.Define("jet2_tautag",   "recojet_isTAU[1]")
+
         # ── Z resonance from muon pair ──────────────────────────────────────────
         df = df.Define("zbuilder_result",
                        "HiggsTools::resonanceBuilder_mass_recoil(91.2, 125, 0.4, 240, false)"
@@ -227,9 +259,9 @@ class RDFanalysis():
         df = df.Define("cosTheta_miss", "HiggsTools::get_cosTheta(MissingET)[0]")
 
         # Z selection window
-        df = df.Filter("zll_m > 86 && zll_m < 96")
-        df = df.Filter("zll_p > 20 && zll_p < 70")
-        df = df.Filter("zll_recoil_m > 120 && zll_recoil_m < 140")
+        # df = df.Filter("zll_m > 86 && zll_m < 96")
+        # df = df.Filter("zll_p > 20 && zll_p < 70")
+        # df = df.Filter("zll_recoil_m > 120 && zll_recoil_m < 140")
 
         # ── gen-level H->bs tag (auxiliary; not the primary BDT label) ──────────
         #  is_Hbs =  1 : Higgs found in MC, daughters are b+s
@@ -269,10 +301,51 @@ class RDFanalysis():
         df = df.Define("gen_s_phi",   "gen_q_phi(Particle, _s_idx)")
         df = df.Define("gen_s_pdg",   "gen_q_pdg(Particle, _s_idx)")
 
+        #MET
+        df = df.Define("met_p",     "FCCAnalyses::ReconstructedParticle::get_p(MissingET)[0]")
+        df = df.Define("met_pt",    "FCCAnalyses::ReconstructedParticle::get_pt(MissingET)[0]")
+        df = df.Define("met_theta", "FCCAnalyses::ReconstructedParticle::get_theta(MissingET)[0]")
+        df = df.Define("met_phi",   "FCCAnalyses::ReconstructedParticle::get_phi(MissingET)[0]")
+
+        #Total Reconstructed Mass/Energy
+
+        df = df.Define("total_p4",
+            "auto h = jets_p4[0] + jets_p4[1];"
+            "TLorentzVector l1, l2, met;"
+            "l1.SetXYZM(zll_leps[0].momentum.x, zll_leps[0].momentum.y, zll_leps[0].momentum.z, zll_leps[0].mass);"
+            "l2.SetXYZM(zll_leps[1].momentum.x, zll_leps[1].momentum.y, zll_leps[1].momentum.z, zll_leps[1].mass);"
+            "met.SetXYZM(MissingET[0].momentum.x, MissingET[0].momentum.y, MissingET[0].momentum.z, 0);"
+            "return h + l1 + l2 + met;")
+        df = df.Define("total_m", "total_p4.M()")
+        df = df.Define("total_e", "total_p4.E()")
+
+        #partial reconstructions
+        df = df.Define("higgs_met", 
+            "auto h = jets_p4[0] + jets_p4[1];"
+            "TLorentzVector met;"
+            "met.SetXYZM(MissingET[0].momentum.x, MissingET[0].momentum.y, MissingET[0].momentum.z, 0);"
+            "return h + met;")
+        df = df.Define("higgs_met_m", "higgs_met.M()")
+        df = df.Define("higgs_met_e", "higgs_met.E()")
+
+        #MET
+        df = df.Define("met_px", "MissingET[0].momentum.x")
+        df = df.Define("met_py", "MissingET[0].momentum.y")
+        df = df.Define("met_pz", "MissingET[0].momentum.z")
+
+        #Charge of jets 
+        #Jet substructure
+
         return df
 
     def output():
         branchList = [
+            #MET
+            "met_p", "met_pt", "met_theta", "met_phi",
+            "met_px", "met_py", "met_pz",
+            "higgs_met_m", "higgs_met_e",
+            #total E and mass
+            "total_m", "total_e",
             # Z leptonic
             "zll_m", "zll_p", "zll_theta",
             "zll_recoil_m",
@@ -285,9 +358,15 @@ class RDFanalysis():
             # Jets
             "jet1_p", "jet1_theta", "jet1_phi", "jet1_mass",
             "jet2_p", "jet2_theta", "jet2_phi", "jet2_mass",
+            
             # Flavor tags
             "jet1_btag", "jet2_btag",
             "jet1_stag", "jet2_stag",
+            "jet1_ctag", "jet2_ctag",
+            "jet1_utag", "jet2_utag",
+            "jet1_dtag", "jet2_dtag",
+            "jet1_Gtag", "jet2_Gtag",
+            "jet1_tautag", "jet2_tautag",
             "btag_max",  "stag_other",
             # Event level
             "cosTheta_miss",

@@ -6,7 +6,7 @@ ana_tex        = 'e^{+}e^{-} #rightarrow ZH #rightarrow #mu^{+}#mu^{-} + X'
 delphesVersion = '3.4.2'
 energy         = 240.0
 collider       = 'FCC-ee'
-inputDir       = '/afs/cern.ch/user/d/dduan/private/FCCWorkplace/analysis/Hbs/mumu/Histo_Files/'
+inputDir       = '/eos/user/d/dduan/FCCee/Hbs/mumu/Histo_Files/'
 yaxis          = ['lin','log']
 #yaxis          = ['lin']
 stacksig       = ['stack','nostack']
@@ -14,7 +14,7 @@ stacksig       = ['stack','nostack']
 formats        = ['png'] #['pdf','png','eps','tex']
 
 #yaxis          = ['lin']
-outdir         = '/afs/cern.ch/user/d/dduan/private/FCCWorkplace/analysis/Hbs/mumu/Final_Plots/'
+outdir         = '/eos/user/d/dduan/FCCee/Hbs/mumu/Final_Plots'
 
 variables = [   #muons
                 "leading_zll_lepton_p",
@@ -34,6 +34,12 @@ variables = [   #muons
                 "cosTheta_miss",
                 #Higgs Mass
                 "higgs_m",
+                #tag scores
+                "btag_max", "stag_other",
+                #met
+                "higgs_met_m", "higgs_met_e",
+                "met_p", "met_pt", "met_theta", "met_phi",
+                "total_m", "total_e",
                ]
 ###Dictonary with the analysis name as a key, and the list of selections to be plotted for this analysis. The name of the selections should be the same than in the final selection
 selections = {}
@@ -60,22 +66,28 @@ colors['WW'] = ROOT.kBlue+1
 colors['ZZ'] = ROOT.kGreen+2
 colors['mumuH_bs'] = ROOT.kMagenta
 colors['mumuH_bb'] = ROOT.kOrange+7
+colors['mumuH_ss'] = ROOT.kViolet
 
 plots = {}
-plots['ZH'] = {'signal':{'mumuH_bs':['wzp6_ee_mumuH_Hbs_ecm240']},
+plots['ZH'] = {'signal':{'mumuH_bs':['wzp6_ee_mumuH_Hbs_W4p1MeV_ecm240']},
                'backgrounds':{'mumuH':['wzp6_ee_mumuH_ecm240'],
                               'mumuH_bb':['wzp6_ee_mumuH_Hbb_ecm240'],
-                              #'WWmumu':['p8_ee_WW_mumu_ecm240'],
-                              #'ZZ':['p8_ee_ZZ_ecm240'],
-                              #'Zmumu':['wzp6_ee_mumu_ecm240'],
-                              #'eeZ':["wzp6_egamma_eZ_Zmumu_ecm240",
-                              #"wzp6_gammae_eZ_Zmumu_ecm240"],
-                              #'gagamumu':["wzp6_gaga_mumu_60_ecm240"]
+                              'mumuH_ss':['wzp6_ee_mumuH_Hss_ecm240'],
+                              
+                              'WWmumu':['p8_ee_WW_mumu_ecm240'],
+                              'WW':['p8_ee_WW_ecm240'],
+                              'ZZ':['p8_ee_ZZ_ecm240'],
+                              'Zmumu':['wzp6_ee_mumu_ecm240'],
+                              'eeZ':["wzp6_egamma_eZ_Zmumu_ecm240",
+                              "wzp6_gammae_eZ_Zmumu_ecm240"],
+                              'gagamumu':["wzp6_gaga_mumu_60_ecm240"]
                               },
               }
+
 legend = {}
 legend['mumuH_bs'] = 'Z(#mu^{-}#mu^{+})H(b#bar{s})'
 legend['mumuH_bb'] = 'Z(#mu^{-}#mu^{+})H(b#bar{b})'
+legend['mumuH_ss'] = 'Z(#mu^{-}#mu^{+})H(s#bar{s})'
 legend['mumuH'] = 'Z(#mu^{-}#mu^{+})H'
 legend['eeH'] = 'Z(e^{-}e^{+})H'
 legend['Zmumu'] = 'Z/#gamma#rightarrow #mu^{+}#mu^{-}'
