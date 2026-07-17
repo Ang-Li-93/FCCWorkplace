@@ -1,0 +1,9 @@
+seaborn
+uproot
+tqdm
+awkward
+xgboost
+scikit-learn
+hyperopt
+pandas
+atlasplots
