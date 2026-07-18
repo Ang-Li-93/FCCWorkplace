@@ -116,7 +116,11 @@ def main(argv=None):
         z, r, cat, n_events = d["z"], d["r"], d["cat"], int(d["nev"])
         print(f"[rz] loaded cache {cache}  ({len(z)} hits, {n_events} events)", file=sys.stderr)
     else:
-        files = sorted(glob.glob(f"{args.indir}/events_*.edm4hep.root"))[: args.nfiles]
+        files = sorted(glob.glob(f"{args.indir}/events_*.edm4hep.root")
+                       or glob.glob(f"{args.indir}/bx_*.edm4hep.root")
+                       or glob.glob(f"{args.indir}/*.edm4hep.root")
+                       or glob.glob(f"{args.indir}/output_*.root")
+                       or glob.glob(f"{args.indir}/*.root"))[: args.nfiles]
         if not files:
             sys.exit(f"no edm4hep files in {args.indir}")
         print(f"[rz] reading {len(files)} files ...", file=sys.stderr)

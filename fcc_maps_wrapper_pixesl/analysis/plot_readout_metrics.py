@@ -23,6 +23,19 @@ def main(argv=None):
     ap.add_argument("csv", help="extended PixESL CSV (with layer,z_mm)")
     ap.add_argument("--outdir", default="outputs/plots_readout")
     ap.add_argument("--pitch-um", type=float, default=20.0)
+    ap.add_argument("--n-events", type=int, default=None,
+                    help="TOTAL number of events/BXs simulated, including "
+                         "hitless ones (default: distinct BX in the CSV -- "
+                         "WRONG for BIB samples where ~27%% of BXs are empty)")
+    ap.add_argument("--qin-min", type=float, default=None,
+                    help="charge threshold in electrons (1 keV = 278 e). BIB "
+                         "CSVs are edep0 (no threshold); qq used 1 keV -- set "
+                         "this for threshold-consistent comparisons")
+    ap.add_argument("--dedup-pixels", action="store_true",
+                    help="count unique fired pixels (BX,layer,module,sensor,"
+                         "COL,ROW) instead of raw SimHit rows: Geant4 "
+                         "step-splitting overstates fired-pixel occupancy "
+                         "~1.6x. Use for absolute occupancy statements.")
     args = ap.parse_args(argv)
 
     import numpy as np, pandas as pd, matplotlib
@@ -31,7 +44,12 @@ def main(argv=None):
     df = pd.read_csv(args.csv)
     if "layer" not in df or "z_mm" not in df:
         sys.exit("ERROR: need the *extended* CSV (layer, z_mm columns).")
-    NEV = df.BX.nunique()
+    if args.qin_min is not None:
+        df = df[df.qin >= args.qin_min]
+    if args.dedup_pixels:
+        keys = [k for k in ("BX", "layer", "module", "sensor", "COL", "ROW") if k in df]
+        df = df.drop_duplicates(subset=keys)
+    NEV = args.n_events if args.n_events else df.BX.nunique()
     layers = [L for L in sorted(df.layer.unique()) if L in GEO]
     outdir = Path(args.outdir); outdir.mkdir(parents=True, exist_ok=True)
     pitch_cm = args.pitch_um / 1e4

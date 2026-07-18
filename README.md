@@ -51,5 +51,6 @@ All are personal forks (`Ang-Li-93/*`) pinned to a branch, cloned via SSH.
 - [documents/WINTER2023_FASTSIM.md](documents/WINTER2023_FASTSIM.md) — `setup_winter2023.sh`: generating winter2023 IDEA fast-sim MC on SDCC
 - [documents/COMBINE.md](documents/COMBINE.md) — `run_combine.sh`: CMS Combine via the FCCSW Singularity image
 - [documents/MAPS_PIXESL.md](documents/MAPS_PIXESL.md) — the MAPS vertex → PixESL full-sim workflow (`setup_MAPS.sh`, `fcc_maps_wrapper_pixesl/`)
+- [documents/BIB_STUDIES.md](documents/BIB_STUDIES.md) — beam-induced background for MAPS/PixESL: BIB sources explained, GHC vs LCC lattices, the local MDI data mirror, bib-studies tooling, sim recipe
 - [documents/MAPS_GUN.md](documents/MAPS_GUN.md) — particle-gun samples for the AI tracking studies: gun → PixESL chain, verified ddsim gun semantics (|p| vs energy, flat-in-θ), seed/BX bookkeeping, condor production
 - [documents/ZH_XSEC_RUNS.md](documents/ZH_XSEC_RUNS.md) — ZH cross-section runs on SDCC: full run book (stage1 condor → fits), results, systematics, hadronic-channel status
