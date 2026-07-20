@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-SDCC HTCondor submitter for the ZH_XSec Paper stage1 (include_bdt) on the winter2023 stack.
+SDCC HTCondor submitter for the ZH_XSec Paper stage1 scripts (stage1_analysis_ntuples.py,
+or stage1_training_ntuples.py with --stage MVA_ntuples) on the winter2023 stack.
 
 Why custom: the winter2023 framework's built-in runBatch emits CERN-only condor config
 (+JobFlavour / +AccountingGroup / eos output). SDCC needs accounting_group=group_usfcc
@@ -12,7 +13,8 @@ Per-process file lists come from xrdfs over eospublic; chunk counts come from th
 analysis script's processList (extracted via AST, so we don't import ROOT here).
 
 Usage:
-  python submit_stage1.py <analysis_script.py> [--dry-run] [--queue tomorrow] [--max-files-per-job N]
+  python submit_stage1.py S240/mumu/stage1_analysis_ntuples.py [--dry-run] [--queue tomorrow] [--max-files-per-job N]
+  python submit_stage1.py S240/qq/stage1_training_ntuples.py --stage MVA_ntuples
 
 Output: <SDCC_BASE>/S<ecm>/<flavor>/BDT_analysis_samples/<process>/chunk_<i>.root
 (ecm/flavor are inferred from the script path .../Paper/S<ecm>/<flavor>/...).
@@ -33,24 +35,30 @@ ACCT_GROUP  = "group_usfcc"
 
 
 def extract_processlist(script_path):
-    """Return (processList dict, prodTag str) from the analysis script without importing it."""
-    tree = ast.parse(open(script_path).read())
-    plist, prodtag = None, None
+    """
+    Return (processList dict, prodTag str) from the analysis script without importing it.
+
+    The config section (everything before the first import, i.e. before the ROOT/user
+    code) is executed statement by statement in an isolated namespace, so processList
+    may be a literal dict (leptonic scripts) or built in loops (qq scripts, where a
+    plain ast.literal_eval of the `processList = {}` seed would yield zero jobs).
+    """
+    src = open(script_path).read()
+    tree = ast.parse(src)
+    ns = {}
     for node in tree.body:
-        if isinstance(node, ast.Assign):
-            for tgt in node.targets:
-                if isinstance(tgt, ast.Name) and tgt.id == "processList":
-                    plist = ast.literal_eval(node.value)
-                elif isinstance(tgt, ast.Name) and tgt.id == "prodTag":
-                    prodtag = ast.literal_eval(node.value)
-    if plist is None:
-        sys.exit("ERROR: could not find processList in %s" % script_path)
-    return plist, prodtag
+        if isinstance(node, (ast.Import, ast.ImportFrom)):
+            break  # config section ends where the user code (ROOT etc.) starts
+        exec(compile(ast.Module(body=[node], type_ignores=[]), script_path, "exec"), ns)
+    plist = ns.get("processList")
+    if not plist:
+        sys.exit("ERROR: could not find a non-empty processList in %s" % script_path)
+    return plist, ns.get("prodTag"), ns.get("outputDir")
 
 
-def list_files(process):
+def list_files(process, sample_base=SAMPLE_BASE):
     """xrdfs ls a winter2023 sample dir; return full xrootd file URLs (real events_*.root)."""
-    cmd = ["xrdfs", "root://eospublic.cern.ch", "ls", f"{SAMPLE_BASE}/{process}"]
+    cmd = ["xrdfs", "root://eospublic.cern.ch", "ls", f"{sample_base}/{process}"]
     try:
         out = subprocess.check_output(cmd, text=True, timeout=120)
     except Exception as e:
@@ -86,22 +94,48 @@ def main():
     parts = script.split(os.sep)
     ecm    = next(p[1:] for p in parts if p.startswith("S") and p[1:].isdigit())
     flavor = parts[parts.index(f"S{ecm}") + 1]
+
+    plist, prodtag, script_outdir = extract_processlist(script)
+
+    # the script's own (relative) outputDir doubles as the stage tag: refuse a mismatch,
+    # which would clobber another stage's chunks (e.g. training trees over analysis ntuples)
+    if script_outdir and "/" not in script_outdir.strip("/") and script_outdir != args.stage:
+        sys.exit(f"ERROR: script outputDir '{script_outdir}' != --stage '{args.stage}'. "
+                 f"Pass --stage {script_outdir}.")
+
+    # follow the script's campaign (e.g. winter2023_training for the leptonic treemakers)
+    sample_base = SAMPLE_BASE
+    if prodtag:
+        tag = prodtag.strip("/")
+        if tag.startswith("FCCee/"):
+            tag = tag[len("FCCee/"):]
+        sample_base = f"/eos/experiment/fcc/ee/generation/DelphesEvents/{tag}"
+
+    # the qq analysis stage constructs TMVAHelperXGB at import: fail at submit time,
+    # not in ~500 condor jobs, if the BDT model has not been trained/staged yet
+    if flavor == "qq" and args.stage == "BDT_analysis_samples":
+        sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+        from site_config import bdt_model
+        model = bdt_model(int(ecm), "qq")
+        if not os.path.isfile(model):
+            sys.exit(f"ERROR: qq BDT model not found: {model}\n"
+                     f"Train it first (S{ecm}/qq/train_xgb.py).")
+
     out_base = f"{SDCC_BASE}/S{ecm}/{flavor}/{args.stage}"
     job_dir  = f"{SDCC_BASE}/S{ecm}/{flavor}/condor/{args.stage}"
     os.makedirs(job_dir, exist_ok=True)
     os.makedirs(out_base, exist_ok=True)
 
-    plist, prodtag = extract_processlist(script)
     print(f"script   : {script}")
     print(f"ecm/flav : {ecm} / {flavor}")
-    print(f"prodTag  : {prodtag}")
+    print(f"prodTag  : {prodtag} (samples from {sample_base})")
     print(f"output   : {out_base}")
     print(f"processes: {len(plist)}")
 
     wrappers = []
     total_jobs = 0
     for proc, cfg in plist.items():
-        files = list_files(proc)
+        files = list_files(proc, sample_base)
         if not files:
             print(f"  {proc}: NO FILES — skipped")
             continue
@@ -147,6 +181,7 @@ def main():
         s.write(f"log                   = {job_dir}/log/$(Cluster).log\n")
         s.write("getenv                = False\n")   # clean worker env; in-job key4hep source must run
         s.write("request_cpus          = 1\n")
+        s.write("request_memory        = 4000\n")  # qq graph (4 clustering hypotheses) exceeds the 2GB default
         s.write(f'+JobFlavour           = "{args.queue}"\n')
         s.write(f"accounting_group      = {ACCT_GROUP}\n")           # SDCC group_usfcc.<user>
         s.write(f"accounting_group_user = {os.getenv('USER')}\n")

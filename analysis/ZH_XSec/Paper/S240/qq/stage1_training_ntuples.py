@@ -1,21 +1,27 @@
 #Mandatory: List of processes
 # BDT training samples (reference: FCCPhysics zh_hadronic_training/train.py):
-# signal = Z(qq/bb/cc/ss)H with all H decays except Hinv, background = WW + Z/gamma*->qq.
+# signal = Z(qq/bb/cc/ss)H with all H decays except Hinv, background = WW + Z/gamma*->qq,
+# from the DEDICATED winter2023_training campaign - statistically independent of the
+# analysis samples (prodTag drives the submitter's sample directory).
 # 'fraction' limits the input files (handled by condor/submit_stage1.py).
 ecm = 240
 z_decays = ["qq", "bb", "cc", "ss"]
 h_decays = ["Hbb", "Hcc", "Hss", "Hgg", "Hmumu", "Htautau", "HZZ", "HWW", "HZa", "Haa"]
+# not produced in winter2023_training at 240 (both exist at 365)
+missing_240 = [("bb", "Hcc"), ("bb", "Hmumu")]
 
 processList = {}
 for z in z_decays:
     for h in h_decays:
+        if (z, h) in missing_240:
+            continue
         processList[f"wzp6_ee_{z}H_{h}_ecm{ecm}"] = {'chunks': 10, 'fraction': 0.5}
 # backgrounds (wzp6_ee_qq replaces the wz3p6_ee_uu/dd/ss/cc/bb samples, absent in winter2023)
 processList[f"p8_ee_WW_ecm{ecm}"]  = {'chunks': 40, 'fraction': 0.1}
 processList[f"wzp6_ee_qq_ecm{ecm}"] = {'chunks': 40, 'fraction': 0.1}
 
 #Mandatory: Production tag when running over EDM4Hep centrally produced events
-prodTag     = "FCCee/winter2023/IDEA/"
+prodTag     = "FCCee/winter2023_training/IDEA/"
 
 outputDir   = "MVA_ntuples"
 #Optional: ncpus, default is 4

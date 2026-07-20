@@ -3,8 +3,7 @@
 #   - signals: all 8 Z decay sets x 11 H decays (Hinv also exists as wzp6 in winter2023)
 #   - wzp6_ee_qq replaces the wz3p6_ee_uu/dd/ss/cc/bb samples (absent in winter2023)
 #   - wz3p6_ee_nunu dropped: no winter2023 equivalent (fully invisible final state anyway)
-#   - p8_ee_tt added at 365 (not in the reference list; the thrust cut targets it)
-ecm = 365
+ecm = 240
 z_decays = ["qq", "ss", "cc", "bb", "ee", "mumu", "tautau", "nunu"]
 h_decays = ["Hbb", "Hcc", "Hss", "Hgg", "Haa", "HZa", "HWW", "HZZ", "Hmumu", "Htautau", "Hinv"]
 
@@ -18,7 +17,6 @@ processList.update({
     f"p8_ee_WW_mumu_ecm{ecm}":          {'chunks': 20},
     f"p8_ee_WW_ee_ecm{ecm}":            {'chunks': 20},
     f"p8_ee_ZZ_ecm{ecm}":               {'chunks': 20},
-    f"p8_ee_tt_ecm{ecm}":               {'chunks': 20},
     f"wzp6_ee_qq_ecm{ecm}":             {'chunks': 40},
     f"wzp6_ee_tautau_ecm{ecm}":         {'chunks': 20},
     f"wzp6_ee_mumu_ecm{ecm}":           {'chunks': 20},
@@ -52,16 +50,20 @@ from site_config import bdt_model
 # TMVAHelperXGB reads the thread-pool size at construction: enable MT first
 ROOT.EnableImplicitMT(nCPUS)
 from addons.TMVAHelper.TMVAHelper import TMVAHelperXGB
-tmva_helper = TMVAHelperXGB(bdt_model(365, "qq"), "bdt_model")
+tmva_helper = TMVAHelperXGB(bdt_model(240, "qq"), "bdt_model")
 
 # process name from the condor wrapper, drives the MC-truth filters (HZZ->inv, WW->leptonic)
 PROC = os.environ.get("FCCANA_PROCESS", "")
+if not PROC:
+    print("WARNING: FCCANA_PROCESS not set - the HZZ->invisible / WW->leptonic MC-truth\n"
+          "         filters are DISABLED for this run. Export FCCANA_PROCESS=<process>\n"
+          "         (as the condor wrapper does) when re-running chunks by hand.")
 
 #Mandatory: RDFanalysis class
 class RDFanalysis():
 
     def analysers(df):
-        return zqq.build_graph_zqq(df, ecm=365, proc=PROC, tmva_helper=tmva_helper, syst=True)
+        return zqq.build_graph_zqq(df, ecm=240, proc=PROC, tmva_helper=tmva_helper, syst=True)
 
     def output():
         return zqq.TREE_BRANCHES + zqq.ANALYSIS_EXTRA_BRANCHES + zqq.SYST_BRANCHES

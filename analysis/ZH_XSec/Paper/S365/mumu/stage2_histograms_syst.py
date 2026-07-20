@@ -57,6 +57,16 @@ doTree = False
 ###Dictionnay of the list of cuts. The key is the name of the selection that will be added to the output file
 cutList = { "sel0":"return true;",
             "sel_Baseline":"zll_m > 86 && zll_m < 96 && zll_recoil_m > 120 &&zll_recoil_m <140 && zll_p > 20 && cosTheta_miss.size() >=1 && cosTheta_miss[0] > -0.98 && cosTheta_miss[0] < 0.98",
+            # no-BDT baseline (referee scenario): wide recoil window 100-150, the
+            # sidebands constrain the background normalization LEP-style
+            "sel_Baseline_wide":"zll_m > 86 && zll_m < 96 && zll_recoil_m > 100 && zll_recoil_m < 150 && zll_p > 50 && zll_p < 150",
+            "sel_Baseline_wide_scaleup":"zll_m_scaleup > 86 && zll_m_scaleup < 96 && zll_recoil_m_scaleup > 100 && zll_recoil_m_scaleup < 150 && zll_p_scaleup > 50 && zll_p_scaleup < 150",
+            "sel_Baseline_wide_scaledw":"zll_m_scaledw > 86 && zll_m_scaledw < 96 && zll_recoil_m_scaledw > 100 && zll_recoil_m_scaledw < 150 && zll_p_scaledw > 50 && zll_p_scaledw < 150",
+            "sel_Baseline_wide_sqrtsup":"zll_m > 86 && zll_m < 96 && zll_recoil_m_sqrtsup > 100 && zll_recoil_m_sqrtsup < 150 && zll_p > 50 && zll_p < 150",
+            "sel_Baseline_wide_sqrtsdw":"zll_m > 86 && zll_m < 96 && zll_recoil_m_sqrtsdw > 100 && zll_recoil_m_sqrtsdw < 150 && zll_p > 50 && zll_p < 150",
+            # paper (arXiv:2512.21290) BDT regions: recoil fitted in low/high score
+            "sel_Baseline_loBDT":"zll_m > 86 && zll_m < 96 && zll_recoil_m > 100 && zll_recoil_m < 150 && zll_p > 20 && BDTscore < 0.66",
+            "sel_Baseline_hiBDT":"zll_m > 86 && zll_m < 96 && zll_recoil_m > 100 && zll_recoil_m < 150 && zll_p > 20 && BDTscore >= 0.66",
             "sel_Baseline_no_costhetamiss":"zll_m  > 86 && zll_m  < 96  && zll_recoil_m > 120 &&zll_recoil_m  <140 && zll_p  > 20 ", 
             "sel_Baseline_no_costhetamiss_scaleup":"zll_m_scaleup  > 86 && zll_m_scaleup  < 96  && zll_recoil_m_scaleup > 120 &&zll_recoil_m_scaleup  <140 && zll_p_scaleup  > 20", 
             "sel_Baseline_no_costhetamiss_scaledw":"zll_m_scaledw  > 86 && zll_m_scaledw  < 96  && zll_recoil_m_scaledw > 120 &&zll_recoil_m_scaledw  <140 && zll_p_scaledw  > 20",
@@ -70,6 +80,16 @@ cutList = { "sel0":"return true;",
 ###Dictionary for the ouput variable/hitograms. The key is the name of the variable in the output files. "name" is the name of the variable in the input file, "title" is the x-axis label of the histogram, "bin" the number of bins of the histogram, "xmin" the minimum x-axis value and "xmax" the maximum x-axis value.
 histoList = {
     "BDT_Score":{"name":"BDTscore","title":"BDT Score","bin":100,"xmin":0,"xmax":1},
+    "recoil_m":{"name":"zll_recoil_m","title":"Recoil mass (GeV)","bin":100,"xmin":100,"xmax":150},
+    "recoil_m_scaleup":{"name":"zll_recoil_m_scaleup","title":"Recoil mass scaleup (GeV)","bin":100,"xmin":100,"xmax":150},
+    "recoil_m_scaledw":{"name":"zll_recoil_m_scaledw","title":"Recoil mass scaledw (GeV)","bin":100,"xmin":100,"xmax":150},
+    "recoil_m_sqrtsup":{"name":"zll_recoil_m_sqrtsup","title":"Recoil mass sqrtsup (GeV)","bin":100,"xmin":100,"xmax":150},
+    "recoil_m_sqrtsdw":{"name":"zll_recoil_m_sqrtsdw","title":"Recoil mass sqrtsdw (GeV)","bin":100,"xmin":100,"xmax":150},
+    "zll_m_h":{"name":"zll_m","title":"m_{ll} (GeV)","bin":50,"xmin":86,"xmax":96},
+    "zll_p_h":{"name":"zll_p","title":"p_{ll} (GeV)","bin":100,"xmin":0,"xmax":120},
+    "leading_lep_p":{"name":"leading_zll_lepton_p","title":"p_{l1} (GeV)","bin":100,"xmin":20,"xmax":100},
+    "leading_lep_theta":{"name":"leading_zll_lepton_theta","title":"#theta_{l1}","bin":64,"xmin":0,"xmax":3.2},
+    "acolinearity_h":{"name":"zll_leptons_acolinearity","title":"|#Delta#theta_{ll}|","bin":64,"xmin":0,"xmax":3.2},
     "BDT_Score":{"name":"BDTscore","title":"BDT Score","bin":100,"xmin":0,"xmax":1}, 
     "BDT_Score_scaleup":{"name":"BDTscore_scaleup","title":"BDT Score LEPSCALE UP","bin":100,"xmin":0,"xmax":1}, 
     "BDT_Score_scaledw":{"name":"BDTscore_scaledw","title":"BDT Score LEPSCALE DOWN","bin":100,"xmin":0,"xmax":1}, 

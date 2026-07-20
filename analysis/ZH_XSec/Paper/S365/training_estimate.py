@@ -11,13 +11,12 @@ import pandas as pd
 import glob
 from sklearn.model_selection import train_test_split
 #Local code
-#from userConfig import loc, mode, train_vars, train_vars_vtx, mode_names
-from userConfig import loc, train_vars, mode_names
-import plotting
-import utils as ut
-from config.common_defaults import deffccdicts
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))  # Paper root
+from leptonic_training_config import make
+import training_utils as ut
 
 def run(channel, modes, n_folds, stage):
+  loc, train_vars, mode_names, _, _ = make(365, channel)
   #xsec, from http://fcc-physics-events.web.cern.ch/fcc-physics-events/Delphesevents_spring2021_IDEA.php
   xsec = {}
   #xsec["mumuH"]   = 0.0067643
@@ -71,7 +70,8 @@ def run(channel, modes, n_folds, stage):
     print("Channel doesn't exist, please choose 'ee' or 'mumu'")
     exit(0)
   
-  data_path =os.path.join(loc.EOS,channel,"training_estimation")
+  # producer on SDCC: python condor/submit_stage1.py S365/<flavor>/stage1_training_estimate.py --stage training_estimation
+  data_path = os.path.join(loc.EOS, "training_estimation")
   print(f"-->Data path: {data_path}")
   files = {}
   df = {}
@@ -84,7 +84,12 @@ def run(channel, modes, n_folds, stage):
   frac = {}
   
   procFile = "FCCee_procDict_winter2023_IDEA.json"
-  procFile = os.path.join(os.getenv('FCCDICTSDIR', deffccdicts), '') + procFile
+  # FCCDICTSDIR may be a colon-separated list in the key4hep+FCCAnalyses env
+  for _d in os.getenv('FCCDICTSDIR', '/cvmfs/fcc.cern.ch/FCCDicts').split(':'):
+    _cand = os.path.join(_d, procFile)
+    if os.path.isfile(_cand):
+      procFile = _cand
+      break
   print(procFile)
   if not os.path.isfile(procFile):
     print ('----> No procDict found: ==={}===, exit'.format(procFile))

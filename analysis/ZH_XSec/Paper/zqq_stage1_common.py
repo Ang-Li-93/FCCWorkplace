@@ -29,7 +29,12 @@ def lepton_veto(df, flavor, ecm):
     df = df.Define(f"leps_{flavor}_iso", f"HiggsTools::coneIsolationTheta(0.01, 0.5)(leps_{flavor}, ReconstructedParticles)")
     df = df.Define(f"leps_{flavor}_sel_iso", f"HiggsTools::sel_isol(0.25)(leps_{flavor}, leps_{flavor}_iso)")
 
-    df = df.Define(f"zbuilder_result_{flavor}", f"HiggsTools::resonanceBuilder_mass_recoil(91.2, 125, 0.4, {ecm}, false)(leps_{flavor}, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle, Particle0, Particle1)")
+    # The resonance builder must be guarded: it exit(1)s on < 2 leptons (most hadronic
+    # events!) and returns an empty RVec when no opposite-charge pair exists. Events
+    # failing the guard get 3 default particles (mass 0 -> the veto mll/recoil windows
+    # below fail -> the event is correctly kept in the hadronic channel).
+    guard = f"(leps_{flavor}_no >= 2 && abs(Sum(leps_{flavor}_q)) < (int)leps_{flavor}_q.size())"
+    df = df.Define(f"zbuilder_result_{flavor}", f"{guard} ? HiggsTools::resonanceBuilder_mass_recoil(91.2, 125, 0.4, {ecm}, false)(leps_{flavor}, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle, Particle0, Particle1) : ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData>(3)")
     df = df.Define(f"zll_{flavor}", f"ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData>{{zbuilder_result_{flavor}[0]}}")
     df = df.Define(f"zll_m_{flavor}", f"FCCAnalyses::ReconstructedParticle::get_mass(zll_{flavor})[0]")
     df = df.Define(f"zll_p_{flavor}", f"FCCAnalyses::ReconstructedParticle::get_p(zll_{flavor})[0]")
@@ -38,7 +43,13 @@ def lepton_veto(df, flavor, ecm):
 
     sel_leps = f"leps_{flavor}_no >= 2 && leps_{flavor}_sel_iso.size() > 0 && abs(Sum(leps_{flavor}_q)) < leps_{flavor}_q.size()"
     sel_mll = f"zll_m_{flavor} > 86 && zll_m_{flavor} < 96"
-    sel_pll = f"zll_p_{flavor} > 20 && zll_p_{flavor} < 70"
+    # p_ll window must cover the leptonic-channel acceptance at each energy: at 240 the
+    # leptonic baseline is 20 < p_ll < 70; at 365 it is p_ll > 20 with no upper bound
+    # (ZH kinematics give p_ll ~ 146 GeV there, far above the 240-era window).
+    if ecm == 240:
+        sel_pll = f"zll_p_{flavor} > 20 && zll_p_{flavor} < 70"
+    else:
+        sel_pll = f"zll_p_{flavor} > 20"
     sel_recoil = f"zll_recoil_m_{flavor} < 150 && zll_recoil_m_{flavor} > 100"
     df = df.Filter(f"!({sel_leps} && {sel_mll} && {sel_pll} && {sel_recoil})")
     return df
@@ -164,9 +175,13 @@ def build_graph_zqq(df, ecm, proc="", tmva_helper=None, syst=False):
     df = df.Define("W2_m", "W2.M()")
     df = df.Define("W1_p", "W1.P()")
     df = df.Define("W2_p", "W2.P()")
-    df = df.Define("W1_costheta", "std::abs(W1.Theta())")
-    df = df.Define("W2_costheta", "std::abs(W1.Theta())")
-    df = df.Define("delta_mWW", "std::sqrt((W1_m-78)*(W1_m-78) + (W2_m-78)*(W2_m-78))")
+    # NB the upstream reference defined both W*_costheta as abs(W1.Theta()) (theta of W1,
+    # twice); kept only for compatibility with the pre-trained MIT model. We retrain the
+    # BDT locally (train_xgb.py), so the proper definitions are used.
+    df = df.Define("W1_costheta", "std::abs(std::cos(W1.Theta()))")
+    df = df.Define("W2_costheta", "std::abs(std::cos(W2.Theta()))")
+    # W-pair rejection reference mass 80.4 GeV (arXiv:2512.21290; an earlier port used 78)
+    df = df.Define("delta_mWW", "std::sqrt((W1_m-80.4)*(W1_m-80.4) + (W2_m-80.4)*(W2_m-80.4))")
 
     ##############################################################
     # selection
@@ -175,8 +190,9 @@ def build_graph_zqq(df, ecm, proc="", tmva_helper=None, syst=False):
         df = df.Filter("zqq_m_best > 20 && zqq_m_best < 140")
         df = df.Filter("zqq_p_best < 90 && zqq_p_best > 20")
     else:
-        df = df.Filter("zqq_m_best > 20 && zqq_m_best < 200")
-        df = df.Filter("zqq_p_best < 160 && zqq_p_best > 60")
+        # 365 windows per arXiv:2512.21290: 60 < m_jj < 200, 20 < p_jj < 160
+        df = df.Filter("zqq_m_best > 60 && zqq_m_best < 200")
+        df = df.Filter("zqq_p_best < 160 && zqq_p_best > 20")
 
     df = df.Filter("z_costheta < 0.85")
 
