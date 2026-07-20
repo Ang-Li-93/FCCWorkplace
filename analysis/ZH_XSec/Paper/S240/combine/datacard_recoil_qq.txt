@@ -1,0 +1,21 @@
+imax 1
+jmax 5
+kmax *
+---------------
+shapes * * datacard.root $PROCESS $PROCESS_$SYSTEMATIC
+---------------
+bin           bin1
+observation   -1
+------------------------------
+bin       bin1    bin1    bin1    bin1    bin1     bin1
+process   signal  bkg_WW  bkg_ZZ  bkg_Zqq bkg_ZH   bkg_rare
+process   0       1       2       3       4        5
+rate      -1      -1      -1      -1      -1       -1
+--------------------------------
+norm_WW    lnN    -   1.01  -     -     -     -
+norm_ZZ    lnN    -   -     1.01  -     -     -
+norm_Zqq   lnN    -   -     -     1.01  -     -
+norm_ZH    lnN    -   -     -     -     1.01  -
+norm_rare  lnN    -   -     -     -     -     1.01
+JETSCALE   shape  1   -     -     -     -     -
+SQRTS      shape  1   -     -     -     -     -

@@ -5,10 +5,11 @@ import glob
 import uproot
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from userConfig import loc, train_vars, mode_names
-import utils as ut
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))  # Paper root
+from leptonic_training_config import make
+loc, train_vars, mode_names, latex_mapping, final_states = make(240, "ee")
+import training_utils as ut
 import json
-from config.common_defaults import deffccdicts
 
 def get_data_paths(cur_mode, data_path):
     path = f"{data_path}/{mode_names[cur_mode]}"
@@ -60,8 +61,13 @@ def get_procDict(procFile):
         req = urllib.request.urlopen(procFile).read()
         procDict = json.loads(req.decode('utf-8'))
     else:
-        if not ('eos' in procFile): 
-            procFile = os.path.join(os.getenv('FCCDICTSDIR', deffccdicts), '') + procFile
+        if not ('eos' in procFile):
+            # FCCDICTSDIR may be a colon-separated list in the key4hep+FCCAnalyses env
+            for d in os.getenv('FCCDICTSDIR', '/cvmfs/fcc.cern.ch/FCCDicts').split(':'):
+                cand = os.path.join(d, procFile)
+                if os.path.isfile(cand):
+                    procFile = cand
+                    break
         print(procFile)
         if not os.path.isfile(procFile):
             print ('----> No procDict found: ==={}===, exit'.format(procFile))

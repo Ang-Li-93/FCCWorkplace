@@ -16,13 +16,13 @@ import uproot
 import ROOT
 import joblib
 import glob
-import seaborn as sns
 from tqdm import tqdm
 
 from matplotlib import rc
-from userConfig import loc, train_vars, mode_names, latex_mapping, final_states
-import plotting
-import utils as ut
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))  # Paper root
+from leptonic_training_config import make
+loc, train_vars, mode_names, latex_mapping, final_states = make(365, "mumu")
+import training_utils as ut
 
 rc('font', **{'family': 'serif', 'serif': ['Roman']})
 rc('text', usetex=True)

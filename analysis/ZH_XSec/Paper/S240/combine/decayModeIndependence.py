@@ -1,6 +1,7 @@
 
 import sys,array,ROOT,math,os,copy
 import argparse
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))  # Paper root: plotter.py
 import plotter
 import ctypes
 

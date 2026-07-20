@@ -41,7 +41,8 @@ ACCOUNTING_GROUP = "group_usfcc" if SITE == "sdcc" else "group_u_FCC.local_gen"
 def bdt_model(ecm, flavor):
     """Path to the (existing, pre-trained) xgb BDT model for a given ecm/flavor."""
     if flavor == "qq":
-        # hadronic channel: model staged on GPFS (original at MIT /ceph, not reachable);
+        # hadronic channel: model trained locally by S{ecm}/qq/train_xgb.py
+        # (the reference pre-trained model at MIT /ceph is not reachable);
         # TMVAHelperXGB format (SaveXGBoost + variables TList)
         return f"{SDCC_BASE}/models/S{ecm}/qq/bdt_model_ecm{ecm}.root"
     if SITE == "sdcc":

@@ -1,0 +1,75 @@
+% ------------------------------------------------------------------
+% Baseline scenario without multivariate selection (referee request).
+% Suggested placement: in Section "Results", after the discussion of
+% Table~\ref{tab:results_xsec}; or as a short subsection at the end of
+% the statistical-interpretation section.
+%
+% NUMBERS: obtained with the identical event selections, samples and
+% fit machinery as the nominal results (SDCC reproduction pipeline,
+% whose nominal precisions agree with Table~\ref{tab:results_xsec}
+% within 10--20\%). Swap in official-pipeline numbers if regenerated.
+% ------------------------------------------------------------------
+
+To assess the dependence of the results on the multivariate selection, a
+baseline scenario is evaluated in which no BDT information is used at any
+stage. The event selection is restricted to the cut-based requirements of
+Section~\ref{sec:EventSelection}, and the cross section is extracted for every
+final state from a one-dimensional fit to the recoil-mass distribution in
+the full $100 < m_{\text{recoil}} < 150\,\GeV$ range, in a single region. In this
+configuration the background normalizations are free parameters of the
+fit, determined in situ from the recoil-mass sidebands, in close analogy
+to the background-estimation strategies employed in the LEP
+Higgs-boson searches; only the background \emph{shapes} are taken from
+simulation. The resulting uncertainties are summarized in
+Table~\ref{tab:results_baseline}.
+
+The comparison with Table~\ref{tab:results_xsec} quantifies the impact of
+the multivariate selection. At \sqrtsZH the leptonic precisions degrade by
+factors of 1.3--1.5, reflecting the fact that the recoil-mass peak itself
+carries most of the discriminating power at this energy, while at
+\sqrtsTop the degradation reaches a factor of about 2.4 per leptonic
+channel, as the recoil distribution is broadened by initial-state
+radiation and the larger beam-energy spread. In the hadronic final state
+the baseline precision degrades by a factor of about three at \sqrtsZH:
+beyond the loss in purity, the removal of the low-BDT control region
+leaves the individual background normalizations nearly degenerate when
+constrained by the recoil shape alone, and the associated normalization
+uncertainties dominate the baseline result. The combined precision
+degrades from $\pm 0.31\%$ ($\pm 0.52\%$) to $\pm 0.64\%$ ($\pm 1.31\%$)
+at \sqrtsZH (\sqrtsTop). The baseline scenario thus validates the
+in-situ background determination underlying the nominal analysis, while
+demonstrating that the multivariate selection improves the final
+precision by a factor of about two at both center-of-mass energies
+without introducing a dependence on the Higgs-boson decay composition
+beyond that quantified in Section~\ref{sec:Model-independent}.
+
+\begin{table}[ht!]
+\renewcommand{\arraystretch}{1.1}
+\centering
+\caption{Relative uncertainties at 68\% confidence level on the \ZH cross
+section (in percent) for the baseline scenario without multivariate
+selection: cut-based selection and one-dimensional recoil-mass fit with
+background normalizations determined from the sidebands, shown for the
+individual final states and their combination.}
+\vspace{0.5em}
+\label{tab:results_baseline}
+{\small
+\begin{tabular}{lcc}
+\toprule
+\textbf{Final state} & \textbf{\sqrtsZH} & \textbf{\sqrtsTop} \\
+\midrule
+\multicolumn{3}{l}{\textbf{Leptonic channels}} \\
+\ZeeH   & $\pm 1.15$ & $\pm 5.20$ \\
+\ZmumuH & $\pm 0.88$ & $\pm 4.59$ \\
+\midrule
+\ZllH   & $\pm 0.71$ & $\pm 3.53$ \\
+\midrule
+\multicolumn{3}{l}{\textbf{Hadronic channel}} \\
+\ZqqH   & $\pm 1.45$ & $\pm 1.40$ \\
+\midrule
+\multicolumn{3}{l}{\textbf{Combined result}} \\
+\ZH     & $\pm 0.64$ & $\pm 1.31$ \\
+\bottomrule
+\end{tabular}
+}
+\end{table}

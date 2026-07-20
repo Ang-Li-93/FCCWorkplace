@@ -113,3 +113,5 @@ lia.cc
 # Analysis results (plots + CSV) are hosted externally, not in git
 fcc_maps_wrapper_pixesl/results/
 HiggsAnalysis/
+analysis/ZH_XSec/Paper/paper_plots/
+analysis/ZH_XSec/Paper/S*/combine/run_*/
