@@ -7,7 +7,8 @@ ROOT.gStyle.SetOptTitle(0)
 
 doPlot = True
 if doPlot:
-    import plotter
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))  # Paper root: plotter.py
+import plotter
 
 
 def doSignal():

@@ -1,0 +1,22 @@
+imax 2
+jmax 5
+kmax *
+---------------
+shapes * * datacard.root $CHANNEL_$PROCESS $CHANNEL_$PROCESS_$SYSTEMATIC
+shapes data_obs * datacard.root $CHANNEL_data_obs
+---------------
+bin           hiBDT   loBDT
+observation   -1      -1
+------------------------------
+bin       hiBDT   hiBDT   hiBDT   hiBDT   hiBDT    hiBDT     loBDT   loBDT   loBDT   loBDT   loBDT    loBDT
+process   signal  bkg_WW  bkg_ZZ  bkg_Zqq bkg_ZH   bkg_rare  signal  bkg_WW  bkg_ZZ  bkg_Zqq bkg_ZH   bkg_rare
+process   0       1       2       3       4        5         0       1       2       3       4        5
+rate      -1      -1      -1      -1      -1       -1        -1      -1      -1      -1      -1       -1
+--------------------------------
+norm_WW    lnN    -   1.01  -     -     -     -       -   1.01  -     -     -     -
+norm_ZZ    lnN    -   -     1.01  -     -     -       -   -     1.01  -     -     -
+norm_Zqq   lnN    -   -     -     1.01  -     -       -   -     -     1.01  -     -
+norm_ZH    lnN    -   -     -     -     1.01  -       -   -     -     -     1.01  -
+norm_rare  lnN    -   -     -     -     -     1.01    -   -     -     -     -     1.01
+JETSCALE   shape  1   -     -     -     -     -       1   -     -     -     -     -
+SQRTS      shape  1   -     -     -     -     -       1   -     -     -     -     -
