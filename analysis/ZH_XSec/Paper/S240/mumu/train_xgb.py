@@ -10,7 +10,6 @@ import xgboost as xgb
 import uproot
 import ROOT
 import joblib
-import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from matplotlib import rc
@@ -20,9 +19,10 @@ from sklearn.metrics import roc_curve, auc
 from sklearn.metrics import accuracy_score
 from sklearn.utils.class_weight import compute_sample_weight
 
-from userConfig import loc, train_vars, mode_names
-import plotting
-import utils as ut
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))  # Paper root
+from leptonic_training_config import make
+loc, train_vars, mode_names, latex_mapping, final_states = make(240, "mumu")
+import training_utils as ut
 
 rc('font', **{'family': 'serif', 'serif': ['Roman']})
 rc('text', usetex=True)
