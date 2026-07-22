@@ -55,7 +55,7 @@ processList = {
     "wzp6_ee_mumuH_Hgg_ecm240",
 
     # Standard Model Backgrounds
-    #"wzp6_ee_mumuH_ecm240",
+    "wzp6_ee_mumuH_ecm240",
     "p8_ee_ZZ_ecm240",
     "p8_ee_WW_ecm240",
     "wzp6_ee_mumu_ecm240",

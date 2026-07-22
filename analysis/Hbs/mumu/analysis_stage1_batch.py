@@ -5,27 +5,51 @@
 import os, copy, urllib.request
 
 processList = {
-    #'wzp6_ee_mumuH_ecm240':           {'chunks': 10},
-    'wzp6_ee_mumuH_Hbs_ecm240':       {'chunks': 10},
-    'p8_ee_WW_mumu_ecm240':           {'chunks': 10},
-    'wzp6_egamma_eZ_Zmumu_ecm240':    {'chunks': 10},
-    'wzp6_gammae_eZ_Zmumu_ecm240':    {'chunks': 10},
-    'wzp6_ee_mumu_ecm240':            {'chunks': 10},
-    'p8_ee_ZZ_ecm240':                {'chunks': 10},
-    'wzp6_gaga_mumu_60_ecm240':       {'chunks': 10},
+    # background
+    'wzp6_ee_mumuH_ecm240':           {'chunks': 20},  #'fraction':0.01},
+    'p8_ee_WW_ecm240':                {'chunks': 80},  #, 'fraction':0.10},
+    'wzp6_egamma_eZ_Zmumu_ecm240':    {'chunks': 20},  #, 'fraction':0.10},
+    'wzp6_gammae_eZ_Zmumu_ecm240':    {'chunks': 20},  #, 'fraction':0.10},
+    'wzp6_ee_mumu_ecm240':            {'chunks': 20},  #, 'fraction':0.10},
+    'p8_ee_ZZ_ecm240':                {'chunks': 20},  #, 'fraction':0.10},
+    'wzp6_gaga_mumu_60_ecm240':       {'chunks': 20},  #, 'fraction':0.10},
+
+    # Diagonal Higgs Decays
+    'wzp6_ee_mumuH_Hbb_ecm240':       {'chunks': 20},  #, 'fraction':0.01},
+    'wzp6_ee_mumuH_Hss_ecm240':       {'chunks': 20},  #, 'fraction':0.01},
+    'wzp6_ee_mumuH_Hcc_ecm240':       {'chunks': 20},  #, 'fraction':0.01},
+    'wzp6_ee_mumuH_Hgg_ecm240':       {'chunks': 20},  #, 'fraction':0.01},
+    'wzp6_ee_mumuH_HWW_ecm240':       {'chunks': 20},  #, 'fraction':0.01},
+    'wzp6_ee_mumuH_HZZ_ecm240':       {'chunks': 20},  #, 'fraction':0.01},
+    'wzp6_ee_mumuH_HZa_ecm240':       {'chunks': 20},  #, 'fraction':0.01},
+    'wzp6_ee_mumuH_HZZ_noInv_ecm240': {'chunks': 20},
+    'wzp6_ee_mumuH_Htautau_ecm240':   {'chunks': 20},
+
+    # Old Testing backgrounds
+    #'p8_ee_WW_mumu_ecm240':          {'chunks': 10},  #, 'fraction':0.10},
 }
 
-prodTag     = "FCCee/winter2023/IDEA/"
-outputDirEos = "/eos/user/l/lia/FCCee/Hbs/mumu/firstlook/"
-eosType     = "eosuser"
-nCPUS       = 4
-batchQueue  = "longlunch"
-compGroup   = "group_u_FCC.local_gen"
+# check the training website samples
+prodTag = "FCCee/winter2023/IDEA/"
+outputDirEos = "/eos/user/d/dduan/FCCee/Hbs/mumu/batch_5"
+eosType = "eosuser"
+nCPUS = 4
+batchQueue = 'workday'  #"longlunch"
+compGroup = "group_u_FCC.local_gen"
+runBatch = True
+
+outputDir = "/eos/user/d/dduan/FCCee/Hbs/mumu/temp_files"
+# outputDir= "/afs/cern.ch/user/d/dduan/private/FCCWorkplace/analysis/Hbs/mumu/ROOT_Files"
 
 ## ParticleNet flavor tagger model (winter2023), trained on 9M jets
-model_name    = "fccee_flavtagging_edm4hep_wc_v1"
-url_model_dir = "https://fccsw.web.cern.ch/fccsw/testsamples/jet_flavour_tagging/winter2023/wc_pt_13_01_2022/"
-model_dir     = "/eos/experiment/fcc/ee/jet_flavour_tagging/winter2023/wc_pt_13_01_2022/"
+model_name = 'fccee_flavtagging_edm4hep_wc'
+url_model_dir = "https://fccsw.web.cern.ch/fccsw/testsamples/jet_flavour_tagging/winter2023/wc_pt_7classes_12_04_2023/"
+model_dir = '/eos/experiment/fcc/ee/jet_flavour_tagging/winter2023/wc_pt_7classes_12_04_2023/'
+
+# Old Model without u and d tags
+# model_name = "fccee_flavtagging_edm4hep_wc_v1"
+# url_model_dir = "https://fccsw.web.cern.ch/fccsw/testsamples/jet_flavour_tagging/winter2023/wc_pt_13_01_2022/"
+# model_dir = "/eos/experiment/fcc/ee/jet_flavour_tagging/winter2023/wc_pt_13_01_2022/"
 
 def get_file_path(url, filename):
     if os.path.exists(filename):
@@ -33,15 +57,13 @@ def get_file_path(url, filename):
     urllib.request.urlretrieve(url, os.path.basename(url))
     return os.path.basename(url)
 
-weaver_preproc = get_file_path("{}/{}.json".format(url_model_dir, model_name),
-                               "{}/{}.json".format(model_dir,     model_name))
-weaver_model   = get_file_path("{}/{}.onnx".format(url_model_dir, model_name),
-                               "{}/{}.onnx".format(model_dir,     model_name))
+weaver_preproc = get_file_path("{}/{}.json".format(url_model_dir, model_name), "{}/{}.json".format(model_dir, model_name))
+weaver_model = get_file_path("{}/{}.onnx".format(url_model_dir, model_name), "{}/{}.onnx".format(model_dir, model_name))
 
 from addons.ONNXRuntime.jetFlavourHelper import JetFlavourHelper
 from addons.FastJet.jetClusteringHelper import ExclusiveJetClusteringHelper
 
-jetFlavourHelper    = None
+jetFlavourHelper = None
 jetClusteringHelper = None
 
 import ROOT
@@ -79,7 +101,7 @@ ROOT::VecOps::RVec<int> find_hbs_quark_indices(
                 std::abs(Particle[pidx].PDG) != 11) { all_e = false; break; }
         }
         if (!all_e) continue;
-        if      (apdg == 5 && b_idx < 0) b_idx = (int)i;
+        if (apdg == 5 && b_idx < 0) b_idx = (int)i;
         else if (apdg == 3 && s_idx < 0) s_idx = (int)i;
         if (b_idx >= 0 && s_idx >= 0) break;
     }
@@ -91,7 +113,7 @@ ROOT::VecOps::RVec<int> find_hbs_quark_indices(
 // Sentinel-returning accessors for a single MCParticle by index.
 // Used to fill gen_{b,s}_* with -999 when the quark wasn't found
 // (e.g. non-BSM samples or events where the helper fails).
-int   safe_at(const ROOT::VecOps::RVec<int>& v, size_t i) { return i < v.size() ? v[i] : -1; }
+int safe_at(const ROOT::VecOps::RVec<int>& v, size_t i) { return i < v.size() ? v[i] : -1; }
 float gen_q_p(const ROOT::VecOps::RVec<edm4hep::MCParticleData>& P, int idx) {
     if (idx < 0 || idx >= (int)P.size()) return -999.f;
     const auto& p = P[idx];
@@ -116,53 +138,55 @@ class RDFanalysis():
 
     def analysers(df):
 
-        df = df.Alias("Lepton0",            "Muon#0.index")
+        df = df.Alias("Lepton0", "Muon#0.index")
         df = df.Alias("MCRecoAssociations0", "MCRecoAssociations#0.index")
         df = df.Alias("MCRecoAssociations1", "MCRecoAssociations#1.index")
-        df = df.Alias("Particle0",           "Particle#0.index")
-        df = df.Alias("Particle1",           "Particle#1.index")
+        df = df.Alias("Particle0", "Particle#0.index")
+        df = df.Alias("Particle1", "Particle#1.index")
 
         # ── muon selection ─────────────────────────────────────────────────────
-        df = df.Define("leps_all",    "FCCAnalyses::ReconstructedParticle::get(Lepton0, ReconstructedParticles)")
-        df = df.Define("leps",        "FCCAnalyses::ReconstructedParticle::sel_p(20)(leps_all)")
-        df = df.Define("leps_no",     "FCCAnalyses::ReconstructedParticle::get_n(leps)")
-        df = df.Define("leps_q",      "FCCAnalyses::ReconstructedParticle::get_charge(leps)")
-        df = df.Define("leps_iso",    "HiggsTools::coneIsolation(0.01, 0.5)(leps, ReconstructedParticles)")
-        df = df.Define("leps_sel_iso","HiggsTools::sel_isol(0.25)(leps, leps_iso)")
+        df = df.Define("leps_all", "FCCAnalyses::ReconstructedParticle::get(Lepton0, ReconstructedParticles)")
+        df = df.Define("leps", "FCCAnalyses::ReconstructedParticle::sel_p(20)(leps_all)")
+        df = df.Define("leps_no", "FCCAnalyses::ReconstructedParticle::get_n(leps)")
+        df = df.Define("leps_q", "FCCAnalyses::ReconstructedParticle::get_charge(leps)")
+        df = df.Define("leps_iso", "HiggsTools::coneIsolation(0.01, 0.5)(leps, ReconstructedParticles)")
+        df = df.Define("leps_sel_iso", "HiggsTools::sel_isol(0.25)(leps, leps_iso)")
 
         df = df.Filter("leps_no >= 1 && leps_sel_iso.size() > 0")
         df = df.Filter("leps_no >= 2 && abs(Sum(leps_q)) < leps_q.size()")
 
         # ── remove muons before jet clustering ─────────────────────────────────
-        df = df.Define("ReconstructedParticlesNoMuons",
-                       "FCCAnalyses::ReconstructedParticle::remove(ReconstructedParticles, leps)")
+        df = df.Define("ReconstructedParticlesNoMuons", "FCCAnalyses::ReconstructedParticle::remove(ReconstructedParticles, leps)")
 
         # ── exclusive 2-jet clustering on hadronic system ──────────────────────
         global jetClusteringHelper, jetFlavourHelper
 
+        njets = 2
+        tag = ''
         collections = {
-            "GenParticles":      "Particle",
-            "PFParticles":       "ReconstructedParticles",
-            "PFTracks":          "EFlowTrack",
-            "PFPhotons":         "EFlowPhoton",
-            "PFNeutralHadrons":  "EFlowNeutralHadron",
-            "TrackState":        "EFlowTrack_1",
-            "TrackerHits":       "TrackerHits",
-            "CalorimeterHits":   "CalorimeterHits",
-            "dNdx":              "EFlowTrack_2",
-            "PathLength":        "EFlowTrack_L",
-            "Bz":                "magFieldBz",
+            "GenParticles": "Particle",
+            "PFParticles": "ReconstructedParticles",
+            "PFTracks": "EFlowTrack",
+            "PFPhotons": "EFlowPhoton",
+            "PFNeutralHadrons": "EFlowNeutralHadron",
+            "TrackState": "EFlowTrack_1",
+            "TrackerHits": "TrackerHits",
+            "CalorimeterHits": "CalorimeterHits",
+            "dNdx": "EFlowTrack_2",
+            "PathLength": "EFlowTrack_L",
+            "Bz": "magFieldBz",
         }
         collections_nomuons = copy.deepcopy(collections)
         collections_nomuons["PFParticles"] = "ReconstructedParticlesNoMuons"
 
-        jetClusteringHelper = ExclusiveJetClusteringHelper(collections_nomuons["PFParticles"], 2)
+        jetClusteringHelper = ExclusiveJetClusteringHelper(collections_nomuons["PFParticles"], njets, tag)
         df = jetClusteringHelper.define(df)
 
         jetFlavourHelper = JetFlavourHelper(
             collections_nomuons,
             jetClusteringHelper.jets,
             jetClusteringHelper.constituents,
+            tag,
         )
         df = jetFlavourHelper.define(df)
         df = jetFlavourHelper.inference(weaver_preproc, weaver_model, df)
@@ -172,56 +196,82 @@ class RDFanalysis():
 
         # ── dijet (Higgs candidate) ─────────────────────────────────────────────
         df = df.Define("jets_p4", "JetConstituentsUtils::compute_tlv_jets({})".format(jetClusteringHelper.jets))
-        df = df.Define("higgs_m",     "JetConstituentsUtils::InvariantMass(jets_p4[0], jets_p4[1])")
-        df = df.Define("jet1_p",      "jet_p[0]")
-        df = df.Define("jet2_p",      "jet_p[1]")
-        df = df.Define("jet1_theta",  "jet_theta[0]")
-        df = df.Define("jet2_theta",  "jet_theta[1]")
-        df = df.Define("jet1_phi",    "jet_phi[0]")
-        df = df.Define("jet2_phi",    "jet_phi[1]")
-        df = df.Define("jet1_mass",   "jet_mass[0]")
-        df = df.Define("jet2_mass",   "jet_mass[1]")
-        df = df.Define("jet1_btag",   "recojet_isB[0]")
-        df = df.Define("jet2_btag",   "recojet_isB[1]")
-        df = df.Define("jet1_stag",   "recojet_isS[0]")
-        df = df.Define("jet2_stag",   "recojet_isS[1]")
+        df = df.Define("higgs_m", "JetConstituentsUtils::InvariantMass(jets_p4[0], jets_p4[1])")
+        df = df.Define("jet1_p", "jet_p[0]")
+        df = df.Define("jet2_p", "jet_p[1]")
+        df = df.Define("jet1_theta", "jet_theta[0]")
+        df = df.Define("jet2_theta", "jet_theta[1]")
+        df = df.Define("jet1_phi", "jet_phi[0]")
+        df = df.Define("jet2_phi", "jet_phi[1]")
+        df = df.Define("jet1_mass", "jet_mass[0]")
+        df = df.Define("jet2_mass", "jet_mass[1]")
+        df = df.Define("jet1_btag", "recojet_isB[0]")
+        df = df.Define("jet2_btag", "recojet_isB[1]")
+        df = df.Define("jet1_stag", "recojet_isS[0]")
+        df = df.Define("jet2_stag", "recojet_isS[1]")
         # max b-tag and matched s-tag (jet with highest b-score is the b-jet candidate)
-        df = df.Define("btag_max",    "std::max(jet1_btag, jet2_btag)")
-        df = df.Define("stag_other",  "jet1_btag > jet2_btag ? jet2_stag : jet1_stag")
+        df = df.Define("btag_max", "std::max(jet1_btag, jet2_btag)")
+        df = df.Define("stag_other", "jet1_btag > jet2_btag ? jet2_stag : jet1_stag")
+
+        # We want more than just b and s tags, our events include much more than that.
+        # At risk of overdoing it, lets include all of them:
+        df = df.Define("jet1_utag", "recojet_isU[0]")
+        df = df.Define("jet2_utag", "recojet_isU[1]")
+        df = df.Define("jet1_dtag", "recojet_isD[0]")
+        df = df.Define("jet2_dtag", "recojet_isD[1]")
+        df = df.Define("jet1_ctag", "recojet_isC[0]")
+        df = df.Define("jet2_ctag", "recojet_isC[1]")
+        df = df.Define("jet1_Gtag", "recojet_isG[0]")
+        df = df.Define("jet2_Gtag", "recojet_isG[1]")
+        df = df.Define("jet1_tautag", "recojet_isTAU[0]")
+        df = df.Define("jet2_tautag", "recojet_isTAU[1]")
+
+        # Other jet variables
+        df = df.Define('event_d12', 'JetClusteringUtils::get_exclusive_dmerge(_jet, 1)')
+        df = df.Define('event_d23', 'JetClusteringUtils::get_exclusive_dmerge(_jet, 2)')
+        df = df.Define('event_d34', 'JetClusteringUtils::get_exclusive_dmerge(_jet, 3)')
+        df = df.Define('event_d45', 'JetClusteringUtils::get_exclusive_dmerge(_jet, 4)')
+
+        df = df.Define('jet1_E', 'jet_e[0]')
+        df = df.Define('jet2_E', 'jet_e[1]')
+
+        df = df.Define('jet1_nconst', 'jet_nconst[0]')
+        df = df.Define('jet2_nconst', 'jet_nconst[1]')
+
+        # ── Calculate Jet Charge ───────────────────────────────────────────────
+        df = df.Define("jet_charges", "JetConstituentsUtils::get_charge({})".format(jetClusteringHelper.constituents))
+        df = df.Define("jet1_charge", "jet_charges[0]")
+        df = df.Define("jet2_charge", "jet_charges[1]")
 
         # ── Z resonance from muon pair ──────────────────────────────────────────
-        df = df.Define("zbuilder_result",
-                       "HiggsTools::resonanceBuilder_mass_recoil(91.2, 125, 0.4, 240, false)"
-                       "(leps, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle, Particle0, Particle1)")
-        df = df.Define("zll",      "ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData>{zbuilder_result[0]}")
+        df = df.Define("zbuilder_result", "HiggsTools::resonanceBuilder_mass_recoil(91.2, 125, 0.4, 240, false)(leps, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle, Particle0, Particle1)")
+        df = df.Define("zll", "ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData>{zbuilder_result[0]}")
         df = df.Define("zll_leps", "ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData>{zbuilder_result[1], zbuilder_result[2]}")
-        df = df.Define("zll_m",    "FCCAnalyses::ReconstructedParticle::get_mass(zll)[0]")
-        df = df.Define("zll_p",    "FCCAnalyses::ReconstructedParticle::get_p(zll)[0]")
-        df = df.Define("zll_theta","FCCAnalyses::ReconstructedParticle::get_theta(zll)[0]")
-        df = df.Define("zll_recoil",   "FCCAnalyses::ReconstructedParticle::recoilBuilder(240)(zll)")
+        df = df.Define("zll_m", "FCCAnalyses::ReconstructedParticle::get_mass(zll)[0]")
+        df = df.Define("zll_p", "FCCAnalyses::ReconstructedParticle::get_p(zll)[0]")
+        df = df.Define("zll_theta", "FCCAnalyses::ReconstructedParticle::get_theta(zll)[0]")
+        df = df.Define("zll_recoil", "FCCAnalyses::ReconstructedParticle::recoilBuilder(240)(zll)")
         df = df.Define("zll_recoil_m", "FCCAnalyses::ReconstructedParticle::get_mass(zll_recoil)[0]")
 
-        df = df.Define("sorted_zll_leptons",        "HiggsTools::sort_greater_p(zll_leps)")
-        df = df.Define("sorted_zll_leptons_p",      "FCCAnalyses::ReconstructedParticle::get_p(sorted_zll_leptons)")
-        df = df.Define("sorted_zll_leptons_theta",  "FCCAnalyses::ReconstructedParticle::get_theta(sorted_zll_leptons)")
-        df = df.Define("leading_zll_lepton_p",      "sorted_zll_leptons_p.at(0)")
-        df = df.Define("leading_zll_lepton_theta",  "sorted_zll_leptons_theta.at(0)")
-        df = df.Define("subleading_zll_lepton_p",   "sorted_zll_leptons_p.at(1)")
-        df = df.Define("subleading_zll_lepton_theta","sorted_zll_leptons_theta.at(1)")
+        df = df.Define("sorted_zll_leptons", "HiggsTools::sort_greater_p(zll_leps)")
+        df = df.Define("sorted_zll_leptons_p", "FCCAnalyses::ReconstructedParticle::get_p(sorted_zll_leptons)")
+        df = df.Define("sorted_zll_leptons_theta", "FCCAnalyses::ReconstructedParticle::get_theta(sorted_zll_leptons)")
+        df = df.Define("leading_zll_lepton_p", "sorted_zll_leptons_p.at(0)")
+        df = df.Define("leading_zll_lepton_theta", "sorted_zll_leptons_theta.at(0)")
+        df = df.Define("subleading_zll_lepton_p", "sorted_zll_leptons_p.at(1)")
+        df = df.Define("subleading_zll_lepton_theta", "sorted_zll_leptons_theta.at(1)")
 
         df = df.Define("zll_Leptons_acolinearity", "HiggsTools::acolinearity(sorted_zll_leptons)")
         df = df.Define("zll_Leptons_acoplanarity", "HiggsTools::acoplanarity(sorted_zll_leptons)")
-        df = df.Define("zll_leptons_acolinearity",
-                       "zll_Leptons_acolinearity.size()>0 ? zll_Leptons_acolinearity.at(0) : -999.f")
-        df = df.Define("zll_leptons_acoplanarity",
-                       "zll_Leptons_acoplanarity.size()>0 ? zll_Leptons_acoplanarity.at(0) : -999.f")
+        df = df.Define("zll_leptons_acolinearity", "zll_Leptons_acolinearity.size()>0 ? zll_Leptons_acolinearity.at(0) : -999.f")
+        df = df.Define("zll_leptons_acoplanarity", "zll_Leptons_acoplanarity.size()>0 ? zll_Leptons_acoplanarity.at(0) : -999.f")
 
         df = df.Define("cosTheta_miss", "HiggsTools::get_cosTheta(MissingET)[0]")
 
         # Z selection window
-        df = df.Filter("zll_m > 86 && zll_m < 96")
-        df = df.Filter("zll_p > 20 && zll_p < 70")
-        df = df.Filter("zll_recoil_m > 120 && zll_recoil_m < 140")
+        # df = df.Filter("zll_m > 86 && zll_m < 96")
+        # df = df.Filter("zll_p > 20 && zll_p < 70")
+        # df = df.Filter("zll_recoil_m > 120 && zll_recoil_m < 140")
 
         # ── gen-level H->bs tag (auxiliary; not the primary BDT label) ──────────
         #  is_Hbs =  1 : Higgs found in MC, daughters are b+s
@@ -237,9 +287,9 @@ class RDFanalysis():
         #                as an on-shell particle. For these events the signal
         #                label comes from the sample name (mode_names["mumuH_Hbs"]
         #                in userConfig.py), not from this branch.
-        df = df.Define("higgs_MC",        "HiggsTools::gen_sel_pdgIDInt(25,false)(Particle)")
+        df = df.Define("higgs_MC", "HiggsTools::gen_sel_pdgIDInt(25,false)(Particle)")
         df = df.Define("higgs_daughters", "HiggsTools::gen_decay_list(higgs_MC, Particle, Particle1)")
-        df = df.Define("is_Hbs",          "hbs_gen_tag(higgs_daughters)")
+        df = df.Define("is_Hbs", "hbs_gen_tag(higgs_daughters)")
 
         # ── gen-quark kinematics for tagger truth-matching (BSM Hbs samples) ───
         # Whizard wzp6_ee_mumuH_Hbs samples don't store the H itself, but the
@@ -250,26 +300,68 @@ class RDFanalysis():
         # (e.g. inclusive mumuH, where the H is a real particle and the b/s
         # don't sit as direct e+e- daughters).
         df = df.Define("hbs_q_idx", "find_hbs_quark_indices(Particle, Particle0)")
-        df = df.Define("_b_idx",    "safe_at(hbs_q_idx, 0)")
-        df = df.Define("_s_idx",    "safe_at(hbs_q_idx, 1)")
-        df = df.Define("gen_b_p",     "gen_q_p(Particle, _b_idx)")
+        df = df.Define("_b_idx", "safe_at(hbs_q_idx, 0)")
+        df = df.Define("_s_idx", "safe_at(hbs_q_idx, 1)")
+        df = df.Define("gen_b_p", "gen_q_p(Particle, _b_idx)")
         df = df.Define("gen_b_theta", "gen_q_theta(Particle, _b_idx)")
-        df = df.Define("gen_b_phi",   "gen_q_phi(Particle, _b_idx)")
-        df = df.Define("gen_b_pdg",   "gen_q_pdg(Particle, _b_idx)")
-        df = df.Define("gen_s_p",     "gen_q_p(Particle, _s_idx)")
+        df = df.Define("gen_b_phi", "gen_q_phi(Particle, _b_idx)")
+        df = df.Define("gen_b_pdg", "gen_q_pdg(Particle, _b_idx)")
+        df = df.Define("gen_s_p", "gen_q_p(Particle, _s_idx)")
         df = df.Define("gen_s_theta", "gen_q_theta(Particle, _s_idx)")
-        df = df.Define("gen_s_phi",   "gen_q_phi(Particle, _s_idx)")
-        df = df.Define("gen_s_pdg",   "gen_q_pdg(Particle, _s_idx)")
+        df = df.Define("gen_s_phi", "gen_q_phi(Particle, _s_idx)")
+        df = df.Define("gen_s_pdg", "gen_q_pdg(Particle, _s_idx)")
+
+        # MET
+        df = df.Define("met_p", "FCCAnalyses::ReconstructedParticle::get_p(MissingET)[0]")
+        df = df.Define("met_pt", "FCCAnalyses::ReconstructedParticle::get_pt(MissingET)[0]")
+        df = df.Define("met_theta", "FCCAnalyses::ReconstructedParticle::get_theta(MissingET)[0]")
+        df = df.Define("met_phi", "FCCAnalyses::ReconstructedParticle::get_phi(MissingET)[0]")
+
+        #Total Reconstructed Mass/Energy
+
+        df = df.Define("total_p4",
+            "auto h = jets_p4[0] + jets_p4[1];"
+            "TLorentzVector l1, l2, met;"
+            "l1.SetXYZM(zll_leps[0].momentum.x, zll_leps[0].momentum.y, zll_leps[0].momentum.z, zll_leps[0].mass);"
+            "l2.SetXYZM(zll_leps[1].momentum.x, zll_leps[1].momentum.y, zll_leps[1].momentum.z, zll_leps[1].mass);"
+            "met.SetXYZM(MissingET[0].momentum.x, MissingET[0].momentum.y, MissingET[0].momentum.z, 0);"
+            "return h + l1 + l2 + met;")
+        df = df.Define("total_m", "total_p4.M()")
+        df = df.Define("total_e", "total_p4.E()")
+
+        #partial reconstructions
+        df = df.Define("higgs_met", 
+            "auto h = jets_p4[0] + jets_p4[1];"
+            "TLorentzVector met;"
+            "met.SetXYZM(MissingET[0].momentum.x, MissingET[0].momentum.y, MissingET[0].momentum.z, 0);"
+            "return h + met;")
+        df = df.Define("higgs_met_m", "higgs_met.M()")
+        df = df.Define("higgs_met_e", "higgs_met.E()")
+
+        #MET
+        df = df.Define("met_px", "MissingET[0].momentum.x")
+        df = df.Define("met_py", "MissingET[0].momentum.y")
+        df = df.Define("met_pz", "MissingET[0].momentum.z")
+
+        #Charge of jets 
+        #Jet substructure
+
 
         return df
 
     def output():
         branchList = [
+            # MET
+            "met_p", "met_pt", "met_theta", "met_phi",
+            "met_px", "met_py", "met_pz",
+            "higgs_met_m", "higgs_met_e",
+            # total E and mass
+            "total_m", "total_e",
             # Z leptonic
             "zll_m", "zll_p", "zll_theta",
             "zll_recoil_m",
             # Z leptons
-            "leading_zll_lepton_p",    "leading_zll_lepton_theta",
+            "leading_zll_lepton_p", "leading_zll_lepton_theta",
             "subleading_zll_lepton_p", "subleading_zll_lepton_theta",
             "zll_leptons_acolinearity", "zll_leptons_acoplanarity",
             # Higgs candidate (dijet)
@@ -277,10 +369,19 @@ class RDFanalysis():
             # Jets
             "jet1_p", "jet1_theta", "jet1_phi", "jet1_mass",
             "jet2_p", "jet2_theta", "jet2_phi", "jet2_mass",
+            "event_d12", "event_d23", "event_d34", "event_d45",
+            "jet1_E", "jet2_E",
+            "jet1_nconst", "jet2_nconst",
+            "jet1_charge", "jet2_charge",
             # Flavor tags
             "jet1_btag", "jet2_btag",
             "jet1_stag", "jet2_stag",
-            "btag_max",  "stag_other",
+            "jet1_ctag", "jet2_ctag",
+            "jet1_utag", "jet2_utag",
+            "jet1_dtag", "jet2_dtag",
+            "jet1_Gtag", "jet2_Gtag",
+            "jet1_tautag", "jet2_tautag",
+            "btag_max", "stag_other",
             # Event level
             "cosTheta_miss",
             # Gen tag (used to define signal in training, not a BDT input)

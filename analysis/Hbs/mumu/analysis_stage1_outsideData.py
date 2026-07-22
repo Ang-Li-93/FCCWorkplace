@@ -20,7 +20,7 @@ processList = {
 
 #prodTag     = "FCCee/winter2023/IDEA/"
 inputDir = '/eos/experiment/fcc/ee/analyses_storage/Higgs_and_TOP/HiggsFCNC/'
-outputDirEos = "/eos/user/d/dduan/FCCee/Hbs/mumu/batch_4"
+outputDirEos = "/eos/user/d/dduan/FCCee/Hbs/mumu/batch_5"
 eosType     = "eosuser"
 nCPUS       = 4
 batchQueue  = "longlunch"

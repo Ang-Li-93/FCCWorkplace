@@ -30,10 +30,7 @@ processList = {
     'wzp6_ee_mumuH_HWW_ecm240':       {'chunks': 20},#, 'fraction':0.01},
     'wzp6_ee_mumuH_HZZ_ecm240':       {'chunks': 20},#, 'fraction':0.01},
     'wzp6_ee_mumuH_HZa_ecm240':       {'chunks': 20},#, 'fraction':0.01},
-    'wzp6_ee_mumuH_Hgg_ecm240':       {'chunks': 20},
-    'wzp6_ee_mumuH_HWW_ecm240':         {'chunks': 20},
     'wzp6_ee_mumuH_HZZ_noInv_ecm240':   {'chunks': 20},
-    'wzp6_ee_mumuH_HZa_ecm240':         {'chunks': 20},
     'wzp6_ee_mumuH_Htautau_ecm240':     {'chunks': 20},
     }
     
