@@ -86,6 +86,24 @@ fi
 
 export PYTHONPATH=${PYTHONPATH}:${LOCAL_DIR}/python
 
+# ── HTCondor batch submission (analysis_stage1_batch.py etc.) ────────────────
+# FCCAnalyses' run_analysis.send_to_batch() locates the build from $LOCAL_DIR,
+# appending "/FCCAnalyses" unless $FCCAnalyses is set, and writes that same path
+# into every subjob script (which sources $LOCAL_DIR/setup.sh and runs
+# $LOCAL_DIR/bin/fccanalysis). With $LOCAL_DIR at the repo root it targets the
+# wrong (AngDev) FCCAnalyses/ and the pre-submit `make install` check fails with
+# "libraries are not properly build and installed". Point both at the
+# winter2023 checkout instead.
+export FCCAnalyses="$FCCANA_DIR"
+export LOCAL_DIR="$FCCANA_DIR"
+# Condor config uses `getenv = False`, so workers start from a clean env and
+# re-source $LOCAL_DIR/setup.sh. Pin their Key4hep stack to 2024-03-10 (via the
+# .fccana/stackpin hook) so they don't pick up the default/latest cvmfs stack,
+# which mis-reads winter2023 edm4hep and breaks the flavour tagger.
+mkdir -p "$FCCANA_DIR/.fccana"
+echo "/cvmfs/sw.hsf.org/key4hep/setup.sh -r 2024-03-10" > "$FCCANA_DIR/.fccana/stackpin"
+
+
 echo
 echo "==> Hbs environment ready"
 echo "    Key4hep stack: 2024-03-10  (winter2023-compatible)"
