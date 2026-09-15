@@ -64,7 +64,7 @@ Storage (GPFS): `/gpfs/mnt/gpfs01/usfcc/ali3/storage/ZH_XSec_Paper/`
 | Step | Environment |
 |---|---|
 | stage1, stage2, makeWS, BDT training | `source /cvmfs/sw.hsf.org/key4hep/setup.sh -r 2024-03-10` then `source FCCAnalyses-winter2023/setup.sh` (xgboost 1.6.2) |
-| text2workspace / combine | `cd HiggsAnalysis/CombinedLimit && source env_standalone.sh` (CMS cvmfs toolchain, ROOT 6.30 — do **not** mix with key4hep) |
+| text2workspace / combine | `./run_combine.sh <cmd>` from the repo root (CMS combine-standalone container from cvmfs, see [COMBINE.md](COMBINE.md)); or `./run_combine.sh bash` for a shell — do **not** source key4hep inside it |
 
 Custom C++ (leptonic `HiggsTools::*` incl. `coneIsolationTheta`, and all hadronic helpers)
 is compiled into `FCCAnalyses-winter2023` (`analyzers/dataframe/{FCCAnalyses/HiggsTools.h,src/HiggsTools.cc}`).

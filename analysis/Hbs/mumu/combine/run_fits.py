@@ -6,9 +6,8 @@
 #   2. the signal cross-section needed for 3 sigma evidence and 5 sigma
 #      discovery (bisection on expected Significance vs injected signal)
 #
-# Must be run inside the Combine standalone environment:
-#   cd HiggsAnalysis/CombinedLimit && source env_standalone.sh
-#   python3 run_fits.py
+# Must be run inside the Combine container (wrapper at the repo root):
+#   ./run_combine.sh python3 analysis/Hbs/mumu/combine/run_fits.py
 
 import os
 import re

@@ -36,6 +36,13 @@ do **not** run this analysis on the latest stack.
 - **On lxplus:** `source /cvmfs/sw.hsf.org/key4hep/setup.sh -r 2024-03-10`, then set up
   a pre-edm4hep1 FCCAnalyses build, plus a venv with `xgboost`, `uproot`, `joblib`,
   `seaborn`, `matplotlib` for the training scripts.
+- **Combine (step 9 only):** neither key4hep nor FCCAnalyses ship Combine. Use the
+  CMS `combine-standalone` container through the `run_combine.sh` wrapper at the repo
+  root: it picks the image unpacked on cvmfs
+  (`/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-cloud/combine-standalone:latest`,
+  Combine 10.2.1 — works on SDCC and lxplus) or, failing that, the FCCSW `.sif` on
+  `/eos`. No environment to source; the wrapper works from any shell, including the
+  `setup_hbs.sh` one. See [documents/COMBINE.md](../../../documents/COMBINE.md).
 
 ## Paths to configure
 
@@ -123,6 +130,51 @@ fccanalysis plots analysis_stage1_trained_plot_analysis_samples.py
 All kinematic, tagging and BDT-score variables, lin/log × stack/nostack
 → `<repo>/Final_Plots/`.
 
+**9. Datacards + expected limits (Combine):**
+```bash
+# from the repo root; both scripts locate their inputs/outputs relative to themselves
+./run_combine.sh python3 analysis/Hbs/mumu/combine/make_datacards.py   # -> combine/cards/<scenario>/{shapes.root,datacard.txt}
+./run_combine.sh python3 analysis/Hbs/mumu/combine/run_fits.py         # text2workspace + limits + significance, all scenarios (~4 min)
+```
+`make_datacards.py` reads the step-7 histograms from `analysis/Hbs/mumu/Histo_Files/`
+(the local SDCC copies are sufficient) and writes one card per one-rare-vs-all-SM scenario (Hbs, Huu,
+Hdd, Hcu, Hsd, Hbd): a 20-bin shape fit of the renormalised score
+`norm_prob{i} = P(rare_i) / (P(rare_i) + P(SM))` at `sel_Baseline_no_costhetamiss`,
+scaled to 10.8 ab⁻¹. The SM Higgs decays are merged into a single `ZH` process, the
+non-Higgs backgrounds stay separate, with a 0.5% lumi `lnN` and `autoMCStats`.
+`data_obs` is the SM-only Asimov sum, so every fit is blind by construction.
+
+`run_fits.py` runs, per scenario, `text2workspace.py`, the expected 68% and 95% CL
+upper limits on the signal strength `r`, and a fixed-point search for the `r` that
+gives 3σ / 5σ expected significance, then prints a BR table. `r` is relative to the
+placeholder generator cross-section stored in the histo files (0.01 pb for the FCNC
+modes, 1 pb for Huu/Hdd), so BR = r × σ_placeholder / σ(ee→μμH) with
+σ(ee→μμH) = 0.0067643 pb; the conversion factor is written in the header of each
+`datacard.txt`.
+
+To run a single scenario by hand, open a shell inside the container (the working
+directory is preserved and the datacard's shape path is relative, so `cd` into the card):
+```bash
+./run_combine.sh bash
+cd analysis/Hbs/mumu/combine/cards/Hbs
+text2workspace.py datacard.txt -o workspace.root
+combine -M AsymptoticLimits workspace.root --cl 0.95 --rAbsAcc 1e-8 --rRelAcc 0.002 -n _cl0.95
+combine -M Significance     workspace.root -t -1 --expectSignal 1e-3
+```
+
+Combine gotchas (both already handled in `run_fits.py`):
+- The `r` limits are ~10⁻⁴, far below Combine's default `--rAbsAcc 5e-4`. Without
+  `--rAbsAcc 1e-8 --rRelAcc 0.002`, `AsymptoticLimits` returns the same `r` for every
+  `--cl` and skips the expected band.
+- Do **not** add `-t -1` to `AsymptoticLimits`: `data_obs` is already Asimov, and with
+  `-t -1` only the "observed" entry is written to the `limit` tree (no quantiles).
+
+All outputs under `cards/` are git-ignored. Provisional expected results (July 2026,
+merged-exclusive ZH background): BR(H→bs), BR(H→bd) < 6×10⁻⁴ at 95% CL, 5σ at
+≈1.6×10⁻³; H→uu/dd ≈ 3×10⁻³ at 95% CL. The SM-Higgs background is meant to be replaced
+by the true inclusive `wzp6_ee_mumuH_ecm240` histogram once it is produced — swap the
+`SM_HIGGS` list in `make_datacards.py` for that single process.
+
 **Auxiliary scripts** (plain python, read stage-1 / BDT ntuples with uproot):
 - [visualize.py](../../../visualize.py) (repo root) — normalised shape overlays of every
   branch for all samples.
@@ -130,9 +182,8 @@ All kinematic, tagging and BDT-score variables, lin/log × stack/nostack
 - [Jet_Checks/](Jet_Checks/) — standalone m(bb) Whizard-vs-Pythia6 cross-check (own README).
 - `process_sig_bkg_samples_for_xgb.py` / `train_xgb.py` / `evaluation.py` — legacy
   binary (Hbs-vs-rest) BDT chain, superseded by the multiclass chain above.
-- [combine/](combine/) — datacard builder + fit runner for the rare-decay limit
-  (see `make_datacards.py`, `run_fits.py`; runs in the CMSSW/combine env via
-  `run_combine.sh` at the repo root).
+- [combine/](combine/) — datacard builder + fit runner for the rare-decay limits
+  (step 9 above; runs inside the Combine container via `run_combine.sh`).
 
 ## Local smoke tests (no condor, no /eos)
 

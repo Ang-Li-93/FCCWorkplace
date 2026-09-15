@@ -9,10 +9,11 @@
 # Outputs: cards/<scenario>/shapes.root + datacard.txt
 #          data_obs = SM-only Asimov (sum of backgrounds)
 #
-# Run inside any environment with ROOT (e.g. the Combine standalone env),
-# then e.g.:
-#   text2workspace.py cards/Hbs/datacard.txt
-#   combine -M AsymptoticLimits cards/Hbs/datacard.txt -t -1 -n _Hbs
+# Run inside any environment with ROOT, e.g. the Combine container:
+#   ./run_combine.sh python3 analysis/Hbs/mumu/combine/make_datacards.py
+# then fit with run_fits.py (same wrapper), or by hand from cards/<scenario>/:
+#   text2workspace.py datacard.txt -o workspace.root
+#   combine -M AsymptoticLimits workspace.root --rAbsAcc 1e-8 --rRelAcc 0.002
 
 import os
 import ROOT
