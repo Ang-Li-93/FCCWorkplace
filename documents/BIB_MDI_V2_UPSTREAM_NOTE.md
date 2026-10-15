@@ -46,3 +46,56 @@ you point us to the production scripts / steering used for
 thresholds, exact stack build)?
 
 Thanks! — Ang (BNL)
+
+---
+
+## Addendum 2026-10-05 — found while building a hit-level truth ntuple of the central IPC sample
+<!-- Draft for Ang to edit/send. Everything below was checked against the DD4hep v01-36 source
+     and the central files; details in documents/BIB_STUDIES.md section 9. -->
+
+**Item 3 above is answered by the files themselves:** the `runs` tree of every central file
+stores the complete ddsim configuration and the steering text. The production used
+FTFP_BERT_EMZ, range cut 0.05 mm, the four low-energy EM UI commands (Auger on),
+`Geant4TrackerWeightedAction` (HitPositionCombination 2), `keepAllParticles = False`
+(`minimalKineticEnergy = 1 MeV`). Our "matched" test (FTFP_BERT, default range cut) was
+therefore not matched; a like-for-like rerun with the verbatim central steering is still to do.
+
+### 4. The central steering sets the tracker filter twice — the sample has a 1 keV per-step cut
+`steering.py` contains `SIM.filter.tracker = "edep0"` (line 189, as in the bib-studies
+recipe) and, nine lines later, the template default `SIM.filter.tracker = "edep1kev"`
+(line 198), which wins. `EnergyDepositMinimumCut` is applied to each Geant4 step before the
+sensitive detector sees it, so in the central IPC sample:
+- no SimTrackerHit is below 1 keV (0 of 2,745,527 tracker hits);
+- for e± below 100 MeV about 70% of the steps in a 50 µm sensor are dropped: hits keep ~90%
+  of the energy and ~82% of the path (the loss vanishes above 100 MeV, where the multiple-
+  scattering model changes and the sensor is crossed in one step);
+- because the boundary step is almost always dropped, a hit is not closed when the track
+  leaves the sensor; a track that re-enters the same sensor is merged into the old hit
+  (6–11% of the vertex-barrel hits, position up to ~16 mm off).
+Question: was `edep0` intended? If so the other central BIB samples made with this steering
+are affected in the same way.
+
+### 5. `part.keepAllParticles = True` has no effect with `Geant4TCUserParticleHandler`
+`setReason()` zeroes the keep-reason of every sub-threshold secondary born inside the tracking
+cylinder, including KEEP_ALWAYS. To store every track one needs `userParticleHandler = ""`
+(or `minimalKineticEnergy = 0`). Relevant for the recipe in bib-studies/simulation/README.md.
+
+### 6. What dominates the outer vertex layers (may interest the vertex/MDI groups)
+On the outer barrel 65% (r = 13 cm) and 94% (r = 31.5 cm) of the SimTrackerHits are sub-MeV
+electrons released in the silicon by X-rays and soft photons (photo-electron + 1.6 keV Si
+Auger electron counted as two hits in one pixel), not charged particles from the IP. About a
+third of them descend from primaries that end at |z| = 1.3–1.5 m, around the copper crotch
+where the two beam pipes separate. The rate therefore depends on the sensitive thickness,
+the Auger setting and the CAD beam pipe.
+
+### 7. bib-studies `drawhits.py` issues seen with this geometry
+- "occupancy" divides distinct cellIDs (pixels here: the readout has x,y fields) by
+  `det_element_cells` (number of sensors): 27% for layer 0 instead of 8e-7;
+- `h_avg_hits_x_layerN_x_module` is booked with a cumulative module offset but filled with
+  the per-layer module id: layers 3 and 4 are 100% underflow (cf. slide 5 of the FCC Week talk);
+- `h_hit_rateDensity` carries 52 MHz × 3 × 5 and an ideal-cylinder area;
+- with `--e_cut` a cellID is marked as fired before the energy cut, so thresholded firing
+  cells are 30–40% low on the outer layers;
+- `python/ALLEGRO.py` takes the sensor area as GetDY × GetDZ, which is thickness × length
+  for the o1_v03 vertex builder; phi binning is 99 bins; `hit_zphi` axis titles are swapped;
+  bin sizes are printed with %d (11.28 mm → "11").

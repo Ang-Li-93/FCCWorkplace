@@ -1,0 +1,53 @@
+# geometry_config.yaml
+# ---------------------
+# Config for convert_simhits_to_pixesl.py. Default target = the ALLEGRO/BNL_MAPS
+# OUTER vertex barrel layers (VTXOB, layer ids 3 & 4) read out at 20 um, in the
+# VertexBarrelCollection. Because the geometry already has a real CartesianGridXY
+# segmentation, COL/ROW are obtained by DECODING the SimTrackerHit cellID
+# (layer, x, y) -- not by position mapping.
+
+target:
+  collection: VertexBarrelCollection
+  mode: resegment            # variant scan: re-bin COL/ROW from position at 25 um
+  keep_layers: [3, 4]          # VTXOB = outer 2 vertex barrel layers (0-2 = inner VTXIB)
+
+# cellID field names (from the readout id descriptor:
+#   system:5,side:-2,layer:5,module:12,sensor:8,x:32:-16,y:-16)
+cellid:
+  field_layer: layer
+  field_module: module
+  field_sensor: sensor
+  field_x: x                   # CartesianGridXY column index (r-phi), signed
+  field_y: y                   # CartesianGridXY row index (z), signed
+
+sensor:
+  pixel_pitch_x_um: 25         # variant readout pitch (Armin-matched)
+  pixel_pitch_y_um: 25
+  thickness_um: 50             # VTXO_sensitive_thickness
+
+# Per-layer geometry (for occupancy area / rate; VTXOB radii from the fork):
+layers:
+  - {id: 3, radius_mm: 100.0, half_length_mm: 122.3}
+  - {id: 4, radius_mm: 285.0, half_length_mm: 285.5}
+
+timing:
+  use_event_as_bx: true        # BX = event index (first version)
+  bx_spacing_ps: 20000         # placeholder
+
+charge:
+  eh_pair_energy_eV: 3.6
+  default_qin_electrons: 1500
+  use_edep_if_available: true
+
+# Fallback for files WITHOUT a pixel segmentation (e.g. the old SiWr) -- only
+# used when target.mode = "barrel_position".
+barrel_position:
+  radius_mm: 2040.0
+  half_length_mm: 2400.0
+  phi0: 0.0
+  z0: 0.0
+  tile_mode: wrap
+  n_col: 1024
+  n_row: 1024
+  sensor_size_x_mm: 20.48
+  sensor_size_y_mm: 20.48

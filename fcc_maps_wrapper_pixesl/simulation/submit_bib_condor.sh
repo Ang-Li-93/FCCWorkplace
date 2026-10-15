@@ -50,6 +50,12 @@ NBXTOTAL="${NBXTOTAL:--1}"
 COMPACT="${COMPACT:-${REPO_ROOT}/k4geo/FCCee/BNL_MAPS/compact/MAPS_o1_v01/MAPS_o1_v01_BIB.xml}"
 STEERING="${STEERING:-${REPO_ROOT}/fcc_maps_wrapper_pixesl/simulation/maps_bib_steer.py}"
 ACCT_GROUP="${ACCT_GROUP:-group_usfcc}"
+# Extra env passed into each job (getenv=False, so anything the runner reads
+# from the environment must be injected here). Used by the LDRD radius scan to
+# select resegment@25um: JOB_ENV="BIB_CONV_MODE=resegment BIB_GEOMCFG=<yaml>
+# BIB_COLOFF=372 BIB_ROWOFF=396". Space-separated VAR=value pairs, no spaces
+# inside values.
+JOB_ENV="${JOB_ENV:-}"
 REQUEST_MEMORY="${REQUEST_MEMORY:-8192}"   # MB; EMZ + CAD geometry, same margin as qq
 REQUEST_DISK="${REQUEST_DISK:-2097152}"    # KB = 2 GB (pairs + one edm4hep in scratch)
 MAXRUNTIME="${MAXRUNTIME:-28800}"          # s = 8 h (NBX * ~10 min + margin)
@@ -113,6 +119,7 @@ arguments               = \$(Process) ${NBX} ${BXLIST} ${COMPACT} ${STEERING} ${
 initialdir              = ${LOGDIR}
 should_transfer_files   = NO
 getenv                  = False
+environment             = "${JOB_ENV}"
 request_cpus            = 1
 request_memory          = ${REQUEST_MEMORY}
 request_disk            = ${REQUEST_DISK}
@@ -132,6 +139,7 @@ echo "[submit] compact  : ${COMPACT}"
 echo "[submit] steering : ${STEERING}"
 echo "[submit] outdir   : ${OUTDIR}"
 echo "[submit] bx list  : ${BXLIST}   vtx-reset: ${VTXRESET}"
+echo "[submit] job env  : ${JOB_ENV:-<none>}"
 echo "[submit] acct grp : ${ACCT_GROUP}   sub: ${SUBFILE}"
 echo "================================================================"
 

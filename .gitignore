@@ -119,3 +119,8 @@ analysis/ZH_XSec/Paper/S*/combine/run_*/
 # Auto-downloaded jet flavour tagger model (fetched by Hbs stage1 scripts)
 analysis/Hbs/mumu/fccee_flavtagging_edm4hep_wc*.json
 analysis/Hbs/mumu/fccee_flavtagging_edm4hep_wc*.onnx
+
+# Local slide decks (shared externally) and the separate HEP-FCC/bib-studies clone
+/*.pptx
+/*.pdf
+bib-studies/

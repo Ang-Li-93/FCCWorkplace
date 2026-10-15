@@ -60,14 +60,22 @@ BIB_DDSIM_TIMEOUT="${BIB_DDSIM_TIMEOUT:-2400}"
 # land in [0,930)x[0,990) exactly like the delivered qq CSVs:
 #   COL: VTXOB_sens_rphi_sensitive 18.6mm / 20um = 930 px -> offset 465
 #   ROW: VTXOB_sens_z_sensitive    19.8mm / 20um = 990 px -> offset 495
-BIB_COLOFF=465
-BIB_ROWOFF=495
+# Env-overridable for the LDRD radius-variant scan (25um pitch -> 372/396):
+BIB_COLOFF="${BIB_COLOFF:-465}"
+BIB_ROWOFF="${BIB_ROWOFF:-495}"
+# Converter mode. Baseline (20um native) = decode_cellid; radius variants re-bin
+# COL/ROW from position at a different pitch via resegment (+ BIB_GEOMCFG below).
+BIB_CONV_MODE="${BIB_CONV_MODE:-decode_cellid}"
 
 BIB_REPO_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../.." >/dev/null 2>&1 && pwd )"
 BIB_CONVERTER="${BIB_REPO_ROOT}/fcc_maps_wrapper_pixesl/conversion/convert_simhits_to_pixesl.py"
+# Geometry config for the converter (per-variant geometry_config_<tag>.yaml for
+# the radius scan; defaults to the 20um baseline config).
+BIB_GEOMCFG="${BIB_GEOMCFG:-${BIB_REPO_ROOT}/fcc_maps_wrapper_pixesl/conversion/geometry_config.yaml}"
 BIB_SCRATCH="${_CONDOR_SCRATCH_DIR:-$(mktemp -d)}/bib_${BIB_PROC}"
 
 echo "[bib $BIB_PROC] host=$(hostname)  nbx=$BIB_NBX  scratch=$BIB_SCRATCH"
+echo "[bib $BIB_PROC] compact=$(basename "$BIB_COMPACT")  conv_mode=$BIB_CONV_MODE  geomcfg=$(basename "$BIB_GEOMCFG")  coloff=$BIB_COLOFF rowoff=$BIB_ROWOFF"
 mkdir -p "$BIB_OUT/sim" "$BIB_OUT/csv" "$BIB_SCRATCH"
 
 # Env: clear positional args (so setup_MAPS.sh doesn't parse them), plain source.
@@ -186,9 +194,9 @@ for bx in $BIB_IDS; do
     python3 "$BIB_CONVERTER" \
         --input "$bib_simout" \
         --output "$bib_csvtmp" \
-        --mode decode_cellid \
+        --mode "$BIB_CONV_MODE" \
         --compact "$BIB_COMPACT" \
-        --geometry    "${BIB_REPO_ROOT}/fcc_maps_wrapper_pixesl/conversion/geometry_config.yaml" \
+        --geometry    "$BIB_GEOMCFG" \
         --collections "${BIB_REPO_ROOT}/fcc_maps_wrapper_pixesl/conversion/collections_config.yaml" \
         --allow-empty \
         --col-offset "$BIB_COLOFF" --row-offset "$BIB_ROWOFF" \

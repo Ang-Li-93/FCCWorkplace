@@ -182,6 +182,119 @@ still applies; ~15× fewer MAPS-layer hits/BX than GHC). Reference: A. Ilg,
 Outputs: `BIB_derived/sim/LCC_V106.2_IPC_Z/`, tag `ipc_LCC_V106p2_Z` (new
 defaults in submit/harvest scripts; GHC re-runs need SRCDIR/OUTDIR/VTXRESET=1).
 
+## 8. LCC V106.2 IPC study — CONCLUDED (2026-07-20)
+
+The LCC IPC study is closed. Approach settled on two tracks (the first LCC
+attempt used the GHC-era MDI and disagreed 3–12× — the fix was to match **both
+lattice and MDI version**, see the MDI-version incident notes):
+
+- **Track A — the deliverable (central-sample conversion).** The mdi_v2 CAD
+  central production is reused directly (no re-simulation; sensor geometry/material
+  identical, only readout pitch differs, invisible to Geant4). All **19,673**
+  central BXs converted (394-job campaign, 0 failures) and re-segmented to the
+  20 µm MAPS grid. Deliverables `outputs/BIB/pixesl_ipc_LCC_V106p2_central{,_extended}.csv`.
+  Headline (recomputed from the CSV 2026-07-20, over all 19,673 BXs):
+  17,141 raw SIM hits = 13,849 unique pixels; **L3 (r=131 mm) 0.306 hits/BX**
+  (1.1e-4 hits/cm²/BX), **L4 (r=315.5 mm) 0.565 hits/BX** (4.4e-5 hits/cm²/BX);
+  per-cm² L3 is ~2.6× busier than L4 (raw totals L3 6,019 / L4 11,122 — L4 wins
+  only via ~5× area + 2× z-extent). 8,240/19,673 BXs (42%) non-empty; mean 2.1
+  hits per non-empty BX; max 112 in one BX. ~4×(L3)/~8×(L4) lower than GHC V24.4.
+  Validated layer-by-layer vs A. Ilg FCC Week 2026 (avg firing cells/evt:
+  L0 24.0, L1 7.8, L2 4.9, L3 0.31, L4 0.57 vs his ~24/7.5/4.7/0.30/0.45–0.50).
+  Published to share `BIB_IPC_LCC/`.
+
+- **Track B — the capability (our own mdi_v2 ddsim), VALIDATED.** Same GuineaPig
+  crossings through our `MAPS_o1_v01_BIB_v2`, 400-BX batch. Ledger 377 clean /
+  4 seed-retry / **19 deterministic hangs**. With matched 1 keV threshold the
+  MAPS layers agree with central (L3 ×1.28 +1.8σ, L4 ×0.94) → absolute scale
+  anchored; inner barrel keeps +9/+23/+34% (L0/L1/L2) from an unknown central
+  config, common-mode for variant comparisons. This unlocks the LDRD endgame:
+  radius/pitch detector variants now run on a trusted chain.
+
+- **Upstream, still open:** `documents/BIB_MDI_V2_UPSTREAM_NOTE.md` (Geant4-hang
+  reproducers + central sample ~4% short: 19,673 sim vs 20,501 GuineaPig inputs
+  + request for exact central ddsim config) is **drafted, for Ang to send** to
+  A. Ciarma / J. Eysermans / A. Ilg.
+
+**Group-update slides:** `documents/BIB_LCC_SLIDES_TEXT.md` (11-slide source, same
+convention as the GHC `BIB_IPC_SLIDES_TEXT.md`) + a ready-to-present HTML deck with
+the plots embedded (`scratchpad/lcc_bib_update.html`, published as a Claude artifact
+2026-07-20). LCC plots: `outputs/BIB/{plots_LCC,bibstudies_LCC}/`.
+
+**Next:** variant scan (Track B) · PixESL readout on the stream · physics⊕BIB
+overlay with Z→qq · send the MDI note · other sources (SR, beam-gas) as needed.
+
+## 9. Follow-up to the 4 Aug 2026 review: axes, L4 vs L3, truth ntuple (2026-10-05)
+
+Two review comments on the LCC deck — "do the Y axes make sense?" and "why is layer 4
+above layer 3, is it low-pT loopers?" — plus a request for ROOT files for event displays.
+Slide source with all numbers: `documents/BIB_LCC_FOLLOWUP_SLIDES_TEXT.md`.
+
+**Truth ntuple (the tool for everything below).** `analysis/make_bib_truth_ntuple.py` reads
+the central EDM4hep files with uproot (no geometry load; 100 condor slices of about a minute
+each; runner + submit file in `MAPS_storage/BIB_derived/truth/IPC_LCC_V106p2_central/condor/`),
+`analysis/merge_bib_truth_ntuple.py` merges them into flat ROOT files one level up, in
+`MAPS_storage/BIB_derived/truth/IPC_LCC_V106p2_central/`:
+`ipc_LCC_V106p2_central_truth.root` (whole tracker, 2,745,527 hits),
+`..._truth_vertex.root` (`--dets 0,1`, 117 MB) and `..._truth_primaries.root` (all primaries
+above 1 MeV pT). Trees `hits` (hit + linked MC particle + primary ancestor + barcode +
+20 µm pixel address), `particles`, `bx`. Plots and tables: `analysis/plot_bib_truth.py` →
+`outputs/BIB/plots_LCC_truth/` (+ `summary_numbers.md`); event displays:
+`analysis/bib_event_display.py` (uproot + matplotlib only); bib-studies histograms with
+correct axis titles: `analysis/redraw_bibstudies_labelled.py` → `outputs/BIB/bibstudies_LCC_labelled/`.
+Published at share `BIB_IPC_LCC/truth_ntuple/` (staging: `fcc_maps_wrapper_pixesl/results/bib_ipc_lcc_truth/`).
+
+**What a hit is in the central sample** (read from the DD4hep v01-36 source and confirmed on
+the files; the full ddsim configuration is in the `runs` tree of every central file):
+one Geant4 track during one stay in one sensor; position = midpoint of first and last stored
+step; momentum = mean of the momenta there (half the entry value for a stopping track);
+steps below 1 keV are dropped *before* the hit is built (`filter.tracker = edep1kev` acts per
+step: no hit below 1 keV, charge 10–20% low for e± below 100 MeV, and a track re-entering a
+sensor can be merged into one hit, 6–11% of vertex-barrel hits); secondaries created below
+1 MeV are not stored — a hit made by one has quality bit 30 set and links to its nearest
+stored ancestor. `--part.keepAllParticles` alone has **no effect** with
+`Geant4TCUserParticleHandler`; full truth needs `SIM.part.userParticleHandler = ""` (or
+`minimalKineticEnergy = 0`).
+
+**Axes.** bib-studies "occupancy [%]" = fired pixels ÷ number of sensors (cellIDs carry
+pixel indices, the dictionary counts sensors) — not an occupancy. The x–y / r–z map colours
+are hits per map cell of an edge-on projection, not densities. `sensor_size_map` of our
+`MAPS_o1_v01_DetectorDimensions.json` is thickness × length (wrong by 128× / 372×; unused by
+drawhits). The rateDensity plots carry 52 MHz × 3 × 5 (21× the simulated rate at 37.04 MHz).
+
+**L4 > L3.** Real (0.565 vs 0.306 hits/BX, 20σ) and not loopers. Field + geometry: pT > 39 MeV
+(L3) / 95 MeV (L4) to arrive from the beam line; 0.024 / 0.0036 primaries per BX do, confirmed
+particle by particle (91% / 86%). 65% (L3) and 94% (L4) of the hits are sub-MeV electrons
+released in the silicon by X-rays and soft photons from showers of the forward pairs in the
+beam pipe / MDI (plus a late part returning from the outer detector); per cm² they fall only
+×0.61 from L3 to L4 (charged-particle hits ×0.07) and L4 has 4.43× the silicon. A pT cut of
+1 MeV on the hit-making track gives L3 0.103 vs L4 0.028; a charge threshold does not change
+the order. Loopers are 23% of L3 and 3.6% of L4 hits.
+
+**Quoting rules (replace the LCC ones of July):**
+- label "LCC V106.2 IPC @ Z, central mdi_v2 sim, SimTrackerHits, 1 keV simulation cut" — not "no threshold";
+- hits ≠ fired pixels: 0.306 / 0.565 hits are 0.259 / 0.445 fired 20 µm pixels per BX; the
+  duplicates are 1.6 keV silicon Auger electrons next to a photo-electron (not step splitting);
+- per area use the sensitive silicon: 2,710.5 cm² (L3), 12,020.7 cm² (L4) → 1.13e-4 and
+  4.70e-5 hits/cm²/BX, 4.2 and 1.7 kHz/cm² at 37.04 MHz;
+- PixESL CSV addresses run 0–930 × 0–990 inclusive (half-width edge pixels), not [0,930)×[0,990);
+- 9% (L3) / 13% (L4) of the hits are later than one bunch spacing and sit in their original BX;
+- the Ilg FCC Week 2026 chart is hits with a 1.8 keV threshold on the first 2,129 BX
+  (reproduced exactly): 24.00 / 7.55 / 4.65 / 0.279 / 0.390.
+
+**Open:** dependence of the soft-photon component on sensitive thickness, Auger setting and
+the beam-pipe CAD model (needs a full-truth re-simulation without the step cut); decide how
+PixESL should treat duplicate-pixel rows, edge addresses, merged hits and late hits.
+The central steering sets `SIM.filter.tracker` twice (`edep0`, then the template default
+`edep1kev`, which wins), so the 1 keV per-step cut is probably unintended; and our July
+"central-matched" test (`maps_central_steer.py`: FTFP_BERT, default range cut) was not
+matched — the real central config is our BIB recipe with `edep1kev` and
+`keepAllParticles = False`. With the per-step cut 8–11% of the central L0–L2 hits are merged
+re-entries (each hiding at least one crossing), which our `edep0` chain keeps separate; this
+probably explains part of the inner-barrel excess of our chain. A rerun of the 400-BX
+validation with the verbatim central steering would settle it. Both points are in the
+addendum of `BIB_MDI_V2_UPSTREAM_NOTE.md` (for Ang to send).
+
 ## 7. Validation vs official results (2026-07-07 audit)
 
 The layer-4/layer-3 total-hit ratio (~3.5×) was independently audited (7-probe
