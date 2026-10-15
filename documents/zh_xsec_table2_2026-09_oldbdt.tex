@@ -1,0 +1,60 @@
+% original models: Table 2 (arXiv:2512.21290, MVA-based) with the hadronic JES/JER nuisances: stat only (= paper stat) / stat + 1% bkg norm (= paper total) / + regular syst profiled (BES, lepton/jet scale, sqrt(s); beyond the paper) / + JES/JER (hadronic; beyond the paper), relative uncertainty on sigma_ZH in %
+% generated 2026-09-30 by table2_full.py from /gpfs/mnt/gpfs01/usfcc/ali3/FCCWorkplace/analysis/ZH_XSec/Paper (run-dir suffix '_oldbdt', JES/JER dirs '_oldbdt_jesjer')
+% per energy: paper = Table 2 total (stat-only); stat = xsecSTAT (all constrained nuisances frozen) =
+% the paper's stat-only; stat+bkg = xsecSTATshapes (shape nuisances frozen, 1% lnN normalizations float)
+% = the paper's quoted total; +syst = xsec of the nominal dir (BES, lepton/jet scale, sqrt(s) profiled
+% in addition - beyond the paper's quoted precision); +JES/JER = xsec of the JES/JER dir (jet energy
+% scale and resolution profiled in addition; hadronic card only, leptonic rows = +syst, marked *; not
+% in the paper's quoted precision either). Precision = half the 2*deltaNLL = 1 interval.
+% the \providecommand lines are fallbacks for a standalone build; the paper's own macros win.
+\providecommand{\ZeeH}{$\mathrm{Z(e^+e^-)H}$}
+\providecommand{\ZmumuH}{$\mathrm{Z(\mu^+\mu^-)H}$}
+\providecommand{\ZllH}{$\mathrm{Z(\ell^+\ell^-)H}$}
+\providecommand{\ZqqH}{$\mathrm{Z(q\bar{q})H}$}
+\providecommand{\ZH}{$\mathrm{ZH}$}
+\begin{table}[ht!]
+\renewcommand{\arraystretch}{1.1}
+\centering
+\caption{Relative uncertainties at the 68\% confidence level on the \ZH cross section (in \%) from the reproduction, MVA-based configuration (original models). For each center-of-mass energy: paper = published value (statistical only in parentheses); stat = statistical only (the paper's stat-only definition); stat+bkg = statistical plus the 1\% background-normalization uncertainties (the paper's quoted total); +syst = with, in addition, the regular systematic uncertainties (beam energy spread, lepton or jet momentum scale, $\sqrt{s}$) profiled; +JES/JER = with, in addition, a 1\% jet energy scale and a 1\% additional jet energy resolution uncertainty profiled in the hadronic fit ($^*$: no jets, equal to the previous column). The last two columns go beyond the paper's quoted precision.}
+\vspace{0.5em}
+\label{tab:results_xsec_repro_jesjer}
+{\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{l|ccccc|ccccc}
+\hline
+ & \multicolumn{10}{c}{$\delta\sigma_{\mathrm{ZH}}/\sigma_{\mathrm{ZH}}$ [\%]} \\
+\hline
+  & \multicolumn{5}{c|}{$\sqrt{s} = 240$~GeV} & \multicolumn{5}{c}{$\sqrt{s} = 365$~GeV} \\
+\textbf{Final state} & paper (stat) & stat & stat+bkg & +syst & +JES/JER & paper (stat) & stat & stat+bkg & +syst & +JES/JER \\
+\hline
+\multicolumn{11}{l}{\textbf{Leptonic final states}} \\
+\ZeeH & 0.81 (0.78) & 0.783 & 0.805 & 0.817 & 0.817$^*$ & 1.91 (1.90) & 1.838 & 1.889 & 1.905 & 1.905$^*$ \\
+\ZmumuH & 0.68 (0.66) & 0.660 & 0.679 & 0.685 & 0.685$^*$ & 1.79 (1.79) & 1.728 & 1.775 & 1.775 & 1.775$^*$ \\
+\hline
+\ZllH & 0.52 (0.50) & 0.505 & 0.523 & 0.529 & 0.529$^*$ & 1.32 (1.30) & 1.259 & 1.307 & 1.308 & 1.308$^*$ \\
+\hline
+\multicolumn{11}{l}{\textbf{Hadronic final state}} \\
+\ZqqH & 0.38 (0.30) & 0.311 & 0.404 & 0.404 & 0.408 & 0.56 (0.47) & 0.432 & 0.513 & 0.513 & 0.515 \\
+\hline
+\multicolumn{11}{l}{\textbf{Combination}} \\
+\ZH & 0.31 (0.26) & 0.265 & 0.318 & 0.318 & 0.321 & 0.52 (0.44) & 0.409 & 0.482 & 0.482 & 0.484 \\
+\hline
+\end{tabular}
+}
+\end{table}
+% quadrature decomposition per energy (in %): 1% bkg-norm sqrt(c2^2 - c1^2), regular syst sqrt(c3^2 - c2^2), JES/JER sqrt(c4^2 - c3^2), full syst sqrt(c4^2 - c1^2)
+%   240 GeV Z(ee)H       bkg-norm  0.184  regular syst  0.141  JES/JER  0 (*)  full syst  0.231
+%   240 GeV Z(mumu)H     bkg-norm  0.160  regular syst  0.085  JES/JER  0 (*)  full syst  0.181
+%   240 GeV Z(ll)H       bkg-norm  0.136  regular syst  0.084  JES/JER  0 (*)  full syst  0.159
+%   240 GeV Z(qq)H       bkg-norm  0.258  regular syst  0.014  JES/JER  0.056  full syst  0.264
+%   240 GeV Combination  bkg-norm  0.176  regular syst  0.018  JES/JER  0.037  full syst  0.180
+%   365 GeV Z(ee)H       bkg-norm  0.432  regular syst  0.249  JES/JER  0 (*)  full syst  0.498
+%   365 GeV Z(mumu)H     bkg-norm  0.404  regular syst  0.009  JES/JER  0 (*)  full syst  0.404
+%   365 GeV Z(ll)H       bkg-norm  0.349  regular syst  0.056  JES/JER  0 (*)  full syst  0.354
+%   365 GeV Z(qq)H       bkg-norm  0.277  regular syst  0.005  JES/JER  0.046  full syst  0.281
+%   365 GeV Combination  bkg-norm  0.254  regular syst     ~0  JES/JER  0.040  full syst  0.258
+% hadronic degradation of the total, xsec(variant)/xsec(nominal) - 1 (paper Sec. 5.3 at 240 GeV, Z(qq)H: +3.9% JES, +3.2% JER)
+%   240 GeV Z(qq)H       nominal  0.404  JES only  0.406 (+0.43%)  JER only  0.405 (+0.32%)  JES + JER  0.408 (+0.96%)
+%   240 GeV Combination  nominal  0.318  JES only  0.320 (+0.37%)  JER only  0.319 (+0.19%)  JES + JER  0.321 (+0.67%)
+%   365 GeV Z(qq)H       nominal  0.513  JES only  0.513 (+0.06%)  JER only  0.515 (+0.31%)  JES + JER  0.515 (+0.40%)
+%   365 GeV Combination  nominal  0.482  JES only  0.482 (+0.05%)  JER only  0.483 (+0.28%)  JES + JER  0.484 (+0.35%)

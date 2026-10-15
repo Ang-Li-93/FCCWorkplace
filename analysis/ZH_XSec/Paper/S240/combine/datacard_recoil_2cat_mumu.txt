@@ -1,0 +1,27 @@
+# Z(mumu)H paper-spec card (arXiv:2512.21290 Sec 5.2/5.3): recoil mass 100-150 GeV in two BDT
+# regions, signal = all ZH final states, per-component backgrounds with 1% lnN, shape nuisances
+# MUSCALE / BES / SQRTS. Templates from makeWS_recoil_2cat.py mumu (datacard.root, <cat>_<proc>).
+# No rateParam (backgrounds constrained, paper). No autoMCStats: high-statistics MC templates
+# and the paper's nuisance list has no MC-statistics term (see makeWS_recoil_2cat.py).
+imax 2
+jmax 4
+kmax *
+---------------
+shapes * * datacard.root $CHANNEL_$PROCESS $CHANNEL_$PROCESS_$SYSTEMATIC
+shapes data_obs * datacard.root $CHANNEL_data_obs
+---------------
+bin           hiBDT   loBDT
+observation   -1      -1
+------------------------------
+bin       hiBDT   hiBDT   hiBDT   hiBDT   hiBDT     loBDT   loBDT   loBDT   loBDT   loBDT
+process   signal  bkg_WW  bkg_ZZ  bkg_Zll bkg_rare  signal  bkg_WW  bkg_ZZ  bkg_Zll bkg_rare
+process   0       1       2       3       4         0       1       2       3       4
+rate      -1      -1      -1      -1      -1        -1      -1      -1      -1      -1
+--------------------------------
+norm_WW    lnN    -   1.01  -     -     -       -   1.01  -     -     -
+norm_ZZ    lnN    -   -     1.01  -     -       -   -     1.01  -     -
+norm_Zll   lnN    -   -     -     1.01  -       -   -     -     1.01  -
+norm_rare  lnN    -   -     -     -     1.01    -   -     -     -     1.01
+MUSCALE    shape  1   -     -     -     -       1   -     -     -     -
+BES        shape  1   -     -     -     -       1   -     -     -     -
+SQRTS      shape  1   -     -     -     -       1   -     -     -     -

@@ -16,6 +16,10 @@ prodTag     = "FCCee/winter2023_training/IDEA/"
 #Optional: output directory, default is local dir
 #outputDir="/afs/cern.ch/work/l/lia/private/FCC/NewWorkFlow/FCCeePhysicsPerformance/case-studies/higgs/mH-recoil/ZH_mumu_recoil_batch/stage1/flatNtuples_test"
 outputDirEos= "/eos/experiment/fcc/ee/analyses_storage/Higgs_and_TOP/mass_xsec/lia/FCCee/TopHiggs/ee/MVAInputs/"
+# stage tag checked by condor/submit_stage1.py against --stage (refuses a mismatch that
+# would write training trees over the analysis ntuples); the absolute --output of each
+# condor job overrides it, so this never redirects output on its own
+outputDir   = "MVAInputs"
 eosType = "eosuser"
 #Optional: ncpus, default is 4
 nCPUS       = 4

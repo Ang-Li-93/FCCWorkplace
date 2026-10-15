@@ -18,6 +18,11 @@ the pre-trained MIT model bdt_model_ecm365.root.
 Run inside the key4hep environment: python train_xgb.py
 (xgboost 1.6.2 in the 2024-03-10 stack: constructor-style eval_metric /
 early_stopping_rounds).
+
+ZQQ_BDT_VARIANT=<variant> (zqq_bdt_variant.py; e.g. bugw = the reference histmaker's W-angle
+inputs) switches to a variant of the BDT inputs: outputs then go to training_<variant>/ and
+models_variants/<variant>/ instead; unset = the behaviour below, unchanged.
+XGB_NTHREAD=<n> limits the xgboost thread count (unset = xgboost default, all cores).
 """
 import os
 import sys
@@ -30,15 +35,17 @@ import ROOT
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 from site_config import bdt_model, output_dir
 from zqq_stage1_common import TRAIN_VARS
+from zqq_bdt_variant import describe as variant_describe, model_path as variant_model_path, training_dir as variant_training_dir
 
 ROOT.gROOT.SetBatch(True)
 
 ECM = 365
 
-trainDir = output_dir(ECM, "qq", "training")
+trainDir = variant_training_dir(ECM)   # training/ (nominal) or training_<variant>/ (ZQQ_BDT_VARIANT)
 
 
 def run():
+    print(f"BDT inputs: {variant_describe()}; training set {trainDir}/preprocessed.pkl")
     data = pd.read_pickle(f"{trainDir}/preprocessed.pkl")
     train, valid = data[~data["valid"]], data[data["valid"]]
     print(f"Training on {len(train)} events, validating on {len(valid)} "
@@ -57,6 +64,8 @@ def run():
         "max_depth": 5,
         "early_stopping_rounds": 1,
     }
+    if os.environ.get("XGB_NTHREAD"):   # optional thread cap (shared nodes); unset = xgboost default
+        params["nthread"] = int(os.environ["XGB_NTHREAD"])
 
     print("Start training")
     eval_set = [(train_data, train_labels), (valid_data, valid_labels)]
@@ -66,7 +75,7 @@ def run():
             sample_weight_eval_set=[train_weights, valid_weights])
 
     print("Export model")
-    fOutName = bdt_model(ECM, "qq")
+    fOutName = variant_model_path(ECM)   # site_config.bdt_model(ECM, "qq") for the nominal inputs
     os.makedirs(os.path.dirname(fOutName), exist_ok=True)
     ROOT.TMVA.Experimental.SaveXGBoost(bdt, "bdt_model", fOutName, num_inputs=len(TRAIN_VARS))
 

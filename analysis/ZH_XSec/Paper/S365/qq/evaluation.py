@@ -7,6 +7,10 @@ Reads training/preprocessed.pkl and the pickled classifier saved next to the
 TMVA model (train_xgb.py). Plots go to training/plots/.
 
 Run inside the key4hep environment: python evaluation.py
+
+ZQQ_BDT_VARIANT=<variant> (zqq_bdt_variant.py; e.g. bugw = the reference histmaker's W-angle
+inputs) switches to a variant of the BDT inputs: outputs then go to training_<variant>/ and
+models_variants/<variant>/ instead; unset = the behaviour below, unchanged.
 """
 import os
 import sys
@@ -22,11 +26,12 @@ from sklearn.metrics import roc_curve, auc
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 from site_config import bdt_model, output_dir
 from zqq_stage1_common import TRAIN_VARS
+from zqq_bdt_variant import describe as variant_describe, latex_overrides, model_path as variant_model_path, training_dir as variant_training_dir
 
 ECM = 365
 LABEL = r"$Z(q\bar{q})H$, $\sqrt{s}$ = %d GeV" % ECM
 
-trainDir = output_dir(ECM, "qq", "training")
+trainDir = variant_training_dir(ECM)   # training/ (nominal) or training_<variant>/ (ZQQ_BDT_VARIANT)
 plotDir = f"{trainDir}/plots"
 
 latex_mapping = {
@@ -46,6 +51,7 @@ latex_mapping = {
     "W1_costheta": r"$|\cos\theta_{W_1}|$",
     "W2_costheta": r"$|\cos\theta_{W_2}|$",
 }
+latex_mapping.update(latex_overrides())   # transformed inputs of a variant (no-op otherwise)
 
 # groups for the efficiency plot (per-process curves would be unreadable: 40 signals)
 eff_groups = {
@@ -147,7 +153,8 @@ def plot_efficiency(df):
 
 def run():
     df = pd.read_pickle(f"{trainDir}/preprocessed.pkl")
-    model_pkl = bdt_model(ECM, "qq").replace(".root", ".pkl")
+    print(f"BDT inputs: {variant_describe()}")
+    model_pkl = variant_model_path(ECM).replace(".root", ".pkl")
     print(f"--->Loading BDT model {model_pkl}")
     with open(model_pkl, "rb") as f:
         bdt = pickle.load(f)

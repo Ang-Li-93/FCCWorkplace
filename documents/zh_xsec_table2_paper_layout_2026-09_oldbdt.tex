@@ -1,0 +1,79 @@
+% original models: Table 2 of arXiv:2512.21290 (JHEP) in the paper's layout: paper vs reproduction, cut-based / MVA-based at 240 and 365 GeV, total (stat-only) in % of sigma_ZH
+% generated 2026-09-30 by table2_paper_layout.py from /gpfs/mnt/gpfs01/usfcc/ali3/FCCWorkplace/analysis/ZH_XSec/Paper (MVA-based run dirs '_oldbdt', cut-based run dirs '_oldbdt_cutbased')
+% cell = total (stat-only) in %. paper = Table 2 of arXiv:2512.21290 (JHEP). reproduction: total =
+% xsecSTATshapes (shape nuisances frozen, the 1% lnN background normalizations float = stat + 1% bkg norm),
+% stat-only = xsecSTAT (all constrained nuisances frozen) - the paper's definitions (its fit has only the 1%
+% normalizations as nuisances; stat-only = background normalizations fixed). The xsec scans (BES, momentum
+% scale, sqrt(s) profiled) and the JES/JER dirs have no counterpart in the paper: comment lines below.
+% Precision = half the 2*deltaNLL = 1 interval of the Asimov grid scan. Requires booktabs; the
+% \providecommand lines are fallbacks for a standalone build, the paper's own macros win.
+\providecommand{\ZeeH}{$\mathrm{Z(e^+e^-)H}$}
+\providecommand{\ZmumuH}{$\mathrm{Z(\mu^+\mu^-)H}$}
+\providecommand{\ZllH}{$\mathrm{Z(\ell^+\ell^-)H}$}
+\providecommand{\ZqqH}{$\mathrm{Z(q\bar{q})H}$}
+\providecommand{\ZH}{$\mathrm{ZH}$}
+\providecommand{\sqrtsZH}{$\sqrt{s} = 240$~GeV}
+\providecommand{\sqrtsTop}{$\sqrt{s} = 365$~GeV}
+\begin{table}[ht!]
+\renewcommand{\arraystretch}{1.1}
+\centering
+\caption{Relative uncertainties at the 68\% confidence level on the \ZH cross section (in \%) for the individual final states and their combination: the published values (paper, Table~2 of arXiv:2512.21290) and the reproduction (original models). The cut-based configuration fits the recoil mass in a single region per final state; the MVA-based configuration adds the BDT categorization and, for \ZqqH, a second fit dimension. The values in parentheses are the statistical-only uncertainties, obtained with the background normalization parameters fixed; like the paper's, the reproduction's totals include the 1\% background-normalization uncertainties and no other nuisance parameter.}
+\vspace{0.5em}
+\label{tab:results_xsec_paper_vs_repro}
+{\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{llcccc}
+\toprule
+ & & \multicolumn{4}{c}{$\delta\sigma_{\mathrm{ZH}}/\sigma_{\mathrm{ZH}}$ (\%)} \\
+ & & \multicolumn{2}{c}{\sqrtsZH} & \multicolumn{2}{c}{\sqrtsTop} \\
+\cmidrule(lr){3-4} \cmidrule(lr){5-6}
+\textbf{Final state} & & Cut-based & MVA-based & Cut-based & MVA-based \\
+\midrule
+\multicolumn{6}{l}{\textbf{Leptonic final states}} \\
+\ZeeH & paper & 1.01 (0.97) & 0.81 (0.78) & 2.27 (2.16) & 1.91 (1.90) \\
+ & reproduction & 1.14 (1.08) & 0.80 (0.78) & 3.40 (2.87) & 1.89 (1.84) \\
+\ZmumuH & paper & 0.84 (0.80) & 0.68 (0.66) & 2.11 (2.03) & 1.79 (1.79) \\
+ & reproduction & 0.86 (0.82) & 0.68 (0.66) & 3.34 (2.86) & 1.77 (1.73) \\
+\midrule
+\ZllH & paper & 0.64 (0.62) & 0.52 (0.50) & 1.56 (1.48) & 1.32 (1.30) \\
+ & reproduction & 0.69 (0.65) & 0.52 (0.50) & 2.45 (2.03) & 1.31 (1.26) \\
+\midrule
+\multicolumn{6}{l}{\textbf{Hadronic final state}} \\
+\ZqqH & paper & 1.20 (0.63) & 0.38 (0.30) & 1.42 (0.63) & 0.56 (0.47) \\
+ & reproduction & 1.41 (0.68) & 0.40 (0.31) & 1.41 (0.62) & 0.51 (0.43) \\
+\midrule
+\multicolumn{6}{l}{\textbf{Combination}} \\
+\ZH & paper & 0.56 (0.44) & 0.31 (0.26) & 1.06 (0.58) & 0.52 (0.44) \\
+ & reproduction & 0.62 (0.47) & 0.32 (0.26) & 1.23 (0.60) & 0.48 (0.41) \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+% differences reproduction - paper, total (stat-only), in percentage points (the paper is rounded to 0.01):
+%   Z(ee)H       240 Cut-based   +0.128 (+0.107)   240 MVA-based   -0.005 (+0.003)   365 Cut-based   +1.133 (+0.714)   365 MVA-based   -0.021 (-0.062)
+%   Z(mumu)H     240 Cut-based   +0.025 (+0.025)   240 MVA-based   -0.001 (+0.000)   365 Cut-based   +1.231 (+0.831)   365 MVA-based   -0.015 (-0.062)
+%   Z(ll)H       240 Cut-based   +0.048 (+0.035)   240 MVA-based   +0.003 (+0.005)   365 Cut-based   +0.886 (+0.547)   365 MVA-based   -0.013 (-0.041)
+%   Z(qq)H       240 Cut-based   +0.214 (+0.047)   240 MVA-based   +0.024 (+0.011)   365 Cut-based   -0.005 (-0.006)   365 MVA-based   -0.047 (-0.038)
+%   Combination  240 Cut-based   +0.058 (+0.031)   240 MVA-based   +0.008 (+0.005)   365 Cut-based   +0.167 (+0.017)   365 MVA-based   -0.038 (-0.031)
+% every reproduction scan at three decimals: stat only (xsecSTAT) / stat + 1% bkg norm (xsecSTATshapes) /
+% + regular syst profiled (xsec, beyond the paper) [/ + JES/JER (hadronic rows, MVA-based dirs)]
+%   240 GeV Cut-based Z(ee)H       1.077 / 1.138 / 1.154
+%   240 GeV Cut-based Z(mumu)H     0.825 / 0.865 / 0.884
+%   240 GeV Cut-based Z(ll)H       0.655 / 0.688 / 0.709
+%   240 GeV Cut-based Z(qq)H       0.677 / 1.414 / 1.417
+%   240 GeV Cut-based Combination  0.471 / 0.618 / 0.637
+%   240 GeV MVA-based Z(ee)H       0.783 / 0.805 / 0.817
+%   240 GeV MVA-based Z(mumu)H     0.660 / 0.679 / 0.685
+%   240 GeV MVA-based Z(ll)H       0.505 / 0.523 / 0.529
+%   240 GeV MVA-based Z(qq)H       0.311 / 0.404 / 0.404 / 0.408
+%   240 GeV MVA-based Combination  0.265 / 0.318 / 0.318 / 0.321
+%   365 GeV Cut-based Z(ee)H       2.874 / 3.403 / 3.414
+%   365 GeV Cut-based Z(mumu)H     2.861 / 3.341 / 3.342
+%   365 GeV Cut-based Z(ll)H       2.027 / 2.446 / 2.451
+%   365 GeV Cut-based Z(qq)H       0.624 / 1.415 / 1.564
+%   365 GeV Cut-based Combination  0.597 / 1.227 / 1.310
+%   365 GeV MVA-based Z(ee)H       1.838 / 1.889 / 1.905
+%   365 GeV MVA-based Z(mumu)H     1.728 / 1.775 / 1.775
+%   365 GeV MVA-based Z(ll)H       1.259 / 1.307 / 1.308
+%   365 GeV MVA-based Z(qq)H       0.432 / 0.513 / 0.513 / 0.515
+%   365 GeV MVA-based Combination  0.409 / 0.482 / 0.482 / 0.484

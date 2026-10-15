@@ -14,6 +14,12 @@ SITE-AWARE via site_config (like the rest of the Paper workflow):
     as in site_config; NB the retired S365 userConfig copies pointed at an older
     FinalReport/S365 staging area instead).
 
+ACOLINEARITY VARIANT (env LEP_ACOL=jan, default 'training' = unchanged behaviour): the trio
+trains/evaluates with the FCCPhysics-histmaker acolinearity (pi - opening angle, computed by
+training_utils.get_df from the stored lepton theta/phi into the zll_leptons_acolinearity
+column); working data go to <base>/training_janacol and FCC_MODELS_BASE must point at a
+separate model tree (e.g. models_variants/janacol). Downstream: rescore_leptonic.py --acol jan.
+
 Usage (from a channel-directory script):
     sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
     from leptonic_training_config import make
@@ -60,13 +66,24 @@ def make(ecm, flavor):
     # site-dependent base for this energy/flavor (SDCC GPFS or original lxplus /eos)
     repo = output_dir(ecm, flavor, "").rstrip("/")
 
+    # Acolinearity variant (env LEP_ACOL=jan, see training_utils.get_df): the working data go
+    # to a separate '<data>_janacol' dir and the model MUST be redirected with FCC_MODELS_BASE
+    # (e.g. .../models_variants/janacol), so the nominal pickles/plots/models are never touched.
+    acol = os.environ.get("LEP_ACOL", "training").lower()
+    if acol not in ("training", "jan"):
+        raise ValueError(f"LEP_ACOL={acol!r}: expected 'training' or 'jan'")
+    if acol == "jan" and not os.environ.get("FCC_MODELS_BASE"):
+        raise SystemExit("LEP_ACOL=jan requires FCC_MODELS_BASE=<dir> (e.g. <SDCC_BASE>/models_variants/janacol): "
+                         "refusing to write a Jan-acolinearity model over the nominal models")
+    data_sub = ('/training' if SITE == "sdcc" else '/data') + ('_janacol' if acol == "jan" else '')
+
     class loc:
         pass
     loc.ROOT = repo + '/'
     loc.OUT = loc.ROOT + 'output_trained/'
     # working data (pickles, plots): 'training' on SDCC (as the qq trio), the
     # original 'data' subdir on lxplus
-    loc.DATA = repo + ('/training' if SITE == "sdcc" else '/data')
+    loc.DATA = repo + data_sub
     loc.CSV = loc.DATA + '/csv'
     loc.PKL = loc.DATA + '/pkl'
     loc.PKL_Val = loc.DATA + '/pkl_val'
@@ -99,4 +116,7 @@ def make(ecm, flavor):
         if flavor == "ee":
             del mode_names["gaga_ee"]
 
-    return loc, list(TRAIN_VARS), mode_names, dict(LATEX_MAPPING), flavor
+    latex = dict(LATEX_MAPPING)
+    if acol == "jan":
+        latex['zll_leptons_acolinearity'] = r'$\pi-\alpha_{\ell\ell}$'  # pi - opening angle
+    return loc, list(TRAIN_VARS), mode_names, latex, flavor

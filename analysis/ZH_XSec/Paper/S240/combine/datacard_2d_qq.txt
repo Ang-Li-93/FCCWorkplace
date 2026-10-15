@@ -1,5 +1,12 @@
+# Z(qq)H paper-spec card (arXiv:2512.21290 Sec 5.2/5.3): unrolled m_recoil x m_jj in two BDT
+# regions, signal = all ZH final states, per-component backgrounds with 1% lnN, shape nuisances
+# JETSCALE / SQRTS / BES on the signal (BES from the inclusive-H samples of all 8 Z decays).
+# Templates from makeWS_2D_qq.py (datacard.root, <cat>_<proc>[_<SYST>Up|Down]).
+# No rateParam (backgrounds constrained, paper). No autoMCStats: high-statistics MC templates
+# and the paper's nuisance list has no MC-statistics term (see makeWS_2D_qq.py).
+# July-2026 definition (ZH-other as bkg_ZH, no BES): datacard_2d_qq_zhbkg.txt.
 imax 2
-jmax 5
+jmax 4
 kmax *
 ---------------
 shapes * * datacard.root $CHANNEL_$PROCESS $CHANNEL_$PROCESS_$SYSTEMATIC
@@ -8,15 +15,15 @@ shapes data_obs * datacard.root $CHANNEL_data_obs
 bin           hiBDT   loBDT
 observation   -1      -1
 ------------------------------
-bin       hiBDT   hiBDT   hiBDT   hiBDT   hiBDT    hiBDT     loBDT   loBDT   loBDT   loBDT   loBDT    loBDT
-process   signal  bkg_WW  bkg_ZZ  bkg_Zqq bkg_ZH   bkg_rare  signal  bkg_WW  bkg_ZZ  bkg_Zqq bkg_ZH   bkg_rare
-process   0       1       2       3       4        5         0       1       2       3       4        5
-rate      -1      -1      -1      -1      -1       -1        -1      -1      -1      -1      -1       -1
+bin       hiBDT   hiBDT   hiBDT   hiBDT   hiBDT     loBDT   loBDT   loBDT   loBDT   loBDT
+process   signal  bkg_WW  bkg_ZZ  bkg_Zqq bkg_rare  signal  bkg_WW  bkg_ZZ  bkg_Zqq bkg_rare
+process   0       1       2       3       4         0       1       2       3       4
+rate      -1      -1      -1      -1      -1        -1      -1      -1      -1      -1
 --------------------------------
-norm_WW    lnN    -   1.01  -     -     -     -       -   1.01  -     -     -     -
-norm_ZZ    lnN    -   -     1.01  -     -     -       -   -     1.01  -     -     -
-norm_Zqq   lnN    -   -     -     1.01  -     -       -   -     -     1.01  -     -
-norm_ZH    lnN    -   -     -     -     1.01  -       -   -     -     -     1.01  -
-norm_rare  lnN    -   -     -     -     -     1.01    -   -     -     -     -     1.01
-JETSCALE   shape  1   -     -     -     -     -       1   -     -     -     -     -
-SQRTS      shape  1   -     -     -     -     -       1   -     -     -     -     -
+norm_WW    lnN    -   1.01  -     -     -       -   1.01  -     -     -
+norm_ZZ    lnN    -   -     1.01  -     -       -   -     1.01  -     -
+norm_Zqq   lnN    -   -     -     1.01  -       -   -     -     1.01  -
+norm_rare  lnN    -   -     -     -     1.01    -   -     -     -     1.01
+JETSCALE   shape  1   -     -     -     -       1   -     -     -     -
+SQRTS      shape  1   -     -     -     -       1   -     -     -     -
+BES        shape  1   -     -     -     -       1   -     -     -     -

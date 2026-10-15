@@ -15,6 +15,10 @@ hadronic reference training (FCCPhysics zh_hadronic_training/train365.py):
     the FCCPhysics reference used 80/20).
 
 Run inside the key4hep environment: python process_sig_bkg_samples_for_xgb.py
+
+ZQQ_BDT_VARIANT=<variant> (zqq_bdt_variant.py; e.g. bugw = the reference histmaker's W-angle
+inputs) switches to a variant of the BDT inputs: outputs then go to training_<variant>/ and
+models_variants/<variant>/ instead; unset = the behaviour below, unchanged.
 """
 import glob
 import json
@@ -28,6 +32,7 @@ from sklearn.model_selection import train_test_split
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 from site_config import output_dir
 from zqq_stage1_common import TRAIN_VARS
+from zqq_bdt_variant import apply_variant, describe as variant_describe, training_dir as variant_training_dir
 
 ECM = 365
 INT_LUMI = 3.12e6     # pb-1 (arXiv:2512.21290)
@@ -35,7 +40,7 @@ SIG_LUMI_FRAC = 0.15   # equal effective lumi per Higgs decay (reference: 0.15 *
 PROCDICT = "/cvmfs/fcc.cern.ch/FCCDicts/FCCee_procDict_winter2023_training_IDEA.json"
 
 inputDir = output_dir(ECM, "qq", "MVA_ntuples")
-outDir = output_dir(ECM, "qq", "training")
+outDir = variant_training_dir(ECM)   # training/ (nominal) or training_<variant>/ (ZQQ_BDT_VARIANT)
 
 z_decays = ["qq", "bb", "cc", "ss"]
 h_decays = ["Hbb", "Hcc", "Hss", "Hgg", "Hmumu", "Htautau", "HZZ", "HWW", "HZa", "Haa"]
@@ -71,6 +76,8 @@ def run():
     print("Parse inputs")
     dfs = [load_process(p, target=1) for p in sig_procs] + [load_process(p) for p in bkg_procs]
     data = pd.concat(dfs, ignore_index=True)
+    print(f"BDT inputs: {variant_describe()}")
+    data = apply_variant(data)   # no-op for the nominal inputs
 
     train_idx, valid_idx = train_test_split(data.index, test_size=0.5, random_state=42)
     data["valid"] = False

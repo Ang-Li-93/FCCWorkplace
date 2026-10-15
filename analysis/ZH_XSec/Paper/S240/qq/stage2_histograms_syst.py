@@ -7,7 +7,9 @@
 #     (jet-scale: zqq_*_scaleup/scaledw; sqrt(s): zqq_recoil_m_sqrtsup/sqrtsdw),
 #   - the BDT score itself is not recomputed under the jet-scale shift (unlike the
 #     leptonic LEPSCALE): the +-1e-5 scale enters through the selection migration,
-#   - no BES / mH-shifted samples exist in winter2023 for hadronic Z decays.
+#   - BES: the inclusive-H ZH samples and their +-1% beam-energy-spread variants
+#     (wzp6_ee_{z}H[_BES-higher-1pc|_BES-lower-1pc]_ecm240, all 8 Z decays; used
+#     for the qq BES nuisance since 2026-09) go through the same selections.
 #
 # Run: fccanalysis final analysis/ZH_XSec/Paper/S240/qq/stage2_histograms_syst.py
 import glob
@@ -32,6 +34,10 @@ h_decays = ["Hbb", "Hcc", "Hss", "Hgg", "Haa", "HZa", "HWW", "HZZ", "Hmumu", "Ht
 # nunuH_Hinv is fully invisible: zero hadronic acceptance, empty stage1 outputs
 _all_procs = [f"wzp6_ee_{z}H_{h}_ecm{ecm}" for z in z_decays for h in h_decays
               if not (z == "nunu" and h == "Hinv")] + [
+    # inclusive-H ZH samples + their +-1% BES variants (BES nuisance), every Z decay;
+    # guarded below like everything else: a missing stage1 output is only a WARNING
+    f"wzp6_ee_{z}H{t}_ecm{ecm}" for z in z_decays for t in ("", "_BES-higher-1pc", "_BES-lower-1pc")
+] + [
     f"p8_ee_WW_ecm{ecm}",
     f"p8_ee_WW_mumu_ecm{ecm}",
     f"p8_ee_WW_ee_ecm{ecm}",

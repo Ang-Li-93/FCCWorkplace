@@ -15,11 +15,43 @@ import pandas as pd
 import uproot
 from sklearn.metrics import roc_curve
 
+# Acolinearity variant of the leptonic BDT inputs (env LEP_ACOL, see leptonic_training_config):
+#   unset / 'training' : zll_leptons_acolinearity as stored by stage1 (= |theta1 - theta2|)
+#   'jan'              : the FCCPhysics histmaker definition acos(-cos(opening angle)) =
+#                        pi - opening angle of the two Z leptons, recomputed from the stored
+#                        theta/phi and written INTO the zll_leptons_acolinearity column, so the
+#                        training trio needs no other change (same variable name, same model
+#                        format; rescore_leptonic.py applies the same definition downstream).
+ACOL_VAR = "zll_leptons_acolinearity"
+ACOL_ANGLES = ["leading_zll_lepton_theta", "leading_zll_lepton_phi",
+               "subleading_zll_lepton_theta", "subleading_zll_lepton_phi"]
+
+
+def acol_variant():
+    v = os.environ.get("LEP_ACOL", "training").lower()
+    if v not in ("training", "jan"):
+        raise ValueError(f"LEP_ACOL={v!r}: expected 'training' or 'jan'")
+    return v
+
+
+def acolinearity_jan(theta1, phi1, theta2, phi2):
+    """pi - opening angle of two directions (FCCPhysics functions.h acolinearity), float64 math."""
+    t1, p1, t2, p2 = (np.asarray(a, dtype=np.float64) for a in (theta1, phi1, theta2, phi2))
+    c = np.sin(t1) * np.sin(t2) * np.cos(p1 - p2) + np.cos(t1) * np.cos(t2)
+    return np.arccos(-np.clip(c, -1.0, 1.0))
+
 
 def get_df(path, vars_list=None):
-    """Load the 'events' tree of a ROOT file into a pandas DataFrame."""
+    """Load the 'events' tree of a ROOT file into a pandas DataFrame
+    (LEP_ACOL=jan: zll_leptons_acolinearity replaced by the Jan definition, see above)."""
+    jan = acol_variant() == "jan" and (vars_list is None or ACOL_VAR in vars_list)
     with uproot.open(path) as f:
-        return f["events"].arrays(vars_list, library="pd")
+        if not jan:
+            return f["events"].arrays(vars_list, library="pd")
+        extra = [] if vars_list is None else [a for a in ACOL_ANGLES if a not in vars_list]
+        df = f["events"].arrays(None if vars_list is None else list(vars_list) + extra, library="pd")
+        df[ACOL_VAR] = acolinearity_jan(*(df[a] for a in ACOL_ANGLES)).astype(df[ACOL_VAR].dtype)
+        return df.drop(columns=extra) if extra else df
 
 
 def create_dir(path):

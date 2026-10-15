@@ -20,13 +20,19 @@ prodTag     = "FCCee/winter2023_training/IDEA/"
 #outputDir="/afs/cern.ch/work/l/lia/private/FCC/NewWorkFlow/FCCeePhysicsPerformance/case-studies/higgs/mH-recoil/ZH_mumu_recoil_batch/stage1/flatNtuples_test"
 #outputDir = "/eos/user/l/lia/FCCee/TopHiggs/mumu/MVAInputs/"
 outputDirEos= "/eos/experiment/fcc/ee/analyses_storage/Higgs_and_TOP/mass_xsec/lia/FCCee/TopHiggs/mumu/MVAInputs/"
+# stage tag checked by condor/submit_stage1.py against --stage (refuses a mismatch that
+# would write training trees over the analysis ntuples); the absolute --output of each
+# condor job overrides it, so this never redirects output on its own
+outputDir   = "MVAInputs"
 eosType = "eosuser"
 #Optional: ncpus, default is 4
 nCPUS       = 4
 
 #Optional running on HTCondor, default is False
-runBatch    = True
-#runBatch    = False
+# runBatch is dead on SDCC (--files-list is handled first); False as in S240/mumu so a
+# bare local run can never fall into the CERN batch path
+runBatch    = False
+#runBatch    = True
 #Optional batch queue name when running on HTCondor, default is workday
 batchQueue = "longlunch"
 

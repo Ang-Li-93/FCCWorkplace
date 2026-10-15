@@ -1,0 +1,26 @@
+# Z(qq)H JULY-2026 card (cross-check): signal = Z(qq/ss/cc/bb)H only, ZH with a non-hadronic Z as
+# the background component bkg_ZH (norm_ZH 1% lnN), no BES. Templates from
+# 'makeWS_2D_qq.py --zh-other-as-bkg' (run_2D_mrecoil_mjj_qq_zhbkg/datacard.root); fit with
+# 'run_fit_qq.sh 2d-zhbkg'. The paper-spec card is datacard_2d_qq.txt.
+imax 2
+jmax 5
+kmax *
+---------------
+shapes * * datacard.root $CHANNEL_$PROCESS $CHANNEL_$PROCESS_$SYSTEMATIC
+shapes data_obs * datacard.root $CHANNEL_data_obs
+---------------
+bin           hiBDT   loBDT
+observation   -1      -1
+------------------------------
+bin       hiBDT   hiBDT   hiBDT   hiBDT   hiBDT    hiBDT     loBDT   loBDT   loBDT   loBDT   loBDT    loBDT
+process   signal  bkg_WW  bkg_ZZ  bkg_Zqq bkg_ZH   bkg_rare  signal  bkg_WW  bkg_ZZ  bkg_Zqq bkg_ZH   bkg_rare
+process   0       1       2       3       4        5         0       1       2       3       4        5
+rate      -1      -1      -1      -1      -1       -1        -1      -1      -1      -1      -1       -1
+--------------------------------
+norm_WW    lnN    -   1.01  -     -     -     -       -   1.01  -     -     -     -
+norm_ZZ    lnN    -   -     1.01  -     -     -       -   -     1.01  -     -     -
+norm_Zqq   lnN    -   -     -     1.01  -     -       -   -     -     1.01  -     -
+norm_ZH    lnN    -   -     -     -     1.01  -       -   -     -     -     1.01  -
+norm_rare  lnN    -   -     -     -     -     1.01    -   -     -     -     -     1.01
+JETSCALE   shape  1   -     -     -     -     -       1   -     -     -     -     -
+SQRTS      shape  1   -     -     -     -     -       1   -     -     -     -     -

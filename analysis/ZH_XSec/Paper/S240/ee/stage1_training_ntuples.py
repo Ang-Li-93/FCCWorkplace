@@ -17,6 +17,10 @@ prodTag     = "FCCee/winter2023_training/IDEA/"
 #outputDir="/afs/cern.ch/work/l/lia/private/FCC/NewWorkFlow/FCCeePhysicsPerformance/case-studies/higgs/mH-recoil/ZH_mumu_recoil_batch/stage1/flatNtuples_test"
 outputDirEos= "/eos/user/l/lia/FCCee/MidTerm/ee/MVAInputs/"
 eosType = "eosuser"
+# stage tag for condor/submit_stage1.py: it refuses a --stage that differs from this value, so the
+# training trees can never be fanned out into BDT_analysis_samples/ (the runner ignores it when
+# --output is absolute, as in the condor wrappers and local smoke tests)
+outputDir   = "MVAInputs"
 #Optional: ncpus, default is 4
 nCPUS       = 4
 

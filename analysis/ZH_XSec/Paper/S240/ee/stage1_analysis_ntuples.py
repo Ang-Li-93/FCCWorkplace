@@ -23,6 +23,21 @@ processList = {
     "wzp6_gaga_tautau_60_ecm240":{'chunks':20},
     "wzp6_ee_nuenueZ_ecm240":{'chunks':20}
     }
+# Exclusive ZH samples: every Z decay x every H decay (arXiv:2512.21290 Sec 5.2: the signal
+# template is the sum of ALL ZH final states passing the leptonic selection, i.e. also the
+# Z(tautau/nunu/qq)H events; Sec 7.2: the per-H-decay breakdown for the BR bias test).
+# The inclusive signal above (+ its BES/mH variants) stays the nominal signal template.
+# nunuH_Hinv is fully invisible (zero acceptance everywhere) and is left out. The samples
+# have 3-24 files of 100k events; the leptonic graph is fast, so 2 chunks per sample.
+# NB: keep this loop BEFORE the first import: condor/submit_stage1.py executes the config
+# section statement by statement up to the first import (see extract_processlist).
+_z_decays = ["ee", "mumu", "tautau", "nunu", "qq", "ss", "cc", "bb"]
+_h_decays = ["Hbb", "Hcc", "Hss", "Hgg", "Haa", "HZa", "HWW", "HZZ", "Hmumu", "Htautau", "Hinv"]
+for _z in _z_decays:
+    for _h in _h_decays:
+        if _z == "nunu" and _h == "Hinv":
+            continue
+        processList[f"wzp6_ee_{_z}H_{_h}_ecm240"] = {'chunks': 2}
 #Mandatory: Production tag when running over EDM4Hep centrally produced events, this points to the yaml files for getting sample statistics
 prodTag     = "FCCee/winter2023/IDEA/"
 

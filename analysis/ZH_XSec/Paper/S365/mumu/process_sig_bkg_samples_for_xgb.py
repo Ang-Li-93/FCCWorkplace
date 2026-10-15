@@ -37,7 +37,14 @@ def calculate_BDT_input_numbers(mode_names, sig, df, eff, xsec, frac):
     return N_BDT_inputs
 
 def split_data_and_update_dataframe(df, N_BDT_inputs, xsec, N_events, cur_mode):
-    df = df.sample(n=N_BDT_inputs[cur_mode], random_state=1)
+    n = N_BDT_inputs[cur_mode]
+    if n > len(df):
+        # the xsec-proportional target can exceed the selected population (at 365 the
+        # winter2023_training backgrounds are only ~5% larger than needed): use every
+        # event instead of letting pandas raise "Cannot take a larger sample than population"
+        print(f"WARNING: {cur_mode}: {n} BDT inputs requested but only {len(df)} selected events available -> using all of them")
+        n = len(df)
+    df = df.sample(n=n, random_state=1)
     df0, df1 = train_test_split(df, test_size=0.5, random_state=7)
     df.loc[df0.index, "valid"] = False
     df.loc[df1.index, "valid"] = True

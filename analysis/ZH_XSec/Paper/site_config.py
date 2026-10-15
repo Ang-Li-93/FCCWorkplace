@@ -11,6 +11,11 @@ Usage in a stage1 script:
     sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
     from site_config import bdt_model, output_dir, ACCOUNTING_GROUP, SITE
     model = bdt_model(240, "mumu")        # -> GPFS copy on SDCC, /eos on lxplus
+
+On SDCC the models are looked up under FCC_MODELS_BASE (default <SDCC_BASE>/models,
+layout S{ecm}/{flavor}/...): point it at another tree, e.g. models_backup_2026-09-29,
+to score with the original CERN-trained leptonic models instead of the retrained ones
+(condor/submit_stage1.py forwards the variable into every job wrapper).
 """
 import os
 import socket
@@ -38,18 +43,23 @@ SDCC_BASE = "/gpfs/mnt/gpfs01/usfcc/ali3/storage/ZH_XSec_Paper"
 ACCOUNTING_GROUP = "group_usfcc" if SITE == "sdcc" else "group_u_FCC.local_gen"
 
 
+def models_base():
+    """SDCC base dir of the staged BDT models (S{ecm}/{flavor}/... below it); env FCC_MODELS_BASE overrides."""
+    return os.environ.get("FCC_MODELS_BASE") or f"{SDCC_BASE}/models"
+
+
 def bdt_model(ecm, flavor):
     """Path to the (existing, pre-trained) xgb BDT model for a given ecm/flavor."""
     if flavor == "qq":
         # hadronic channel: model trained locally by S{ecm}/qq/train_xgb.py
         # (the reference pre-trained model at MIT /ceph is not reachable);
         # TMVAHelperXGB format (SaveXGBoost + variables TList)
-        return f"{SDCC_BASE}/models/S{ecm}/qq/bdt_model_ecm{ecm}.root"
+        return f"{models_base()}/S{ecm}/qq/bdt_model_ecm{ecm}.root"
     if SITE == "sdcc":
         # winter2023 stack (old TMVA/ROOT): the original xgb_bdt.root loads natively
         # via RBDT<>. (A converted new-format model xgb_bdt_rbdt.root also exists from
         # models/convert_bdt.py, only needed if ever running on the latest ROOT stack.)
-        return f"{SDCC_BASE}/models/S{ecm}/{flavor}/xgb_bdt.root"
+        return f"{models_base()}/S{ecm}/{flavor}/xgb_bdt.root"
     # lxplus: original locations (240 = MidTerm, 365 = TopHiggs storage)
     if int(ecm) == 240:
         return f"/eos/user/l/lia/FCCee/MidTerm/{flavor}/BDT/xgb_bdt.root"

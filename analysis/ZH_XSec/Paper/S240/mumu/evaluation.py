@@ -51,8 +51,17 @@ def load_trained_model(loc):
 
 def evaluate_bdt_model(df, bdt, vars_list):
     X = df[vars_list]
-    print(f"--->Evaluating BDT model")
-    df["BDTscore"] = bdt.predict_proba(X).tolist()
+    # score with the FULL booster: the deployed TMVA RBDT model (SaveXGBoost in train_xgb.py)
+    # contains every boosted round, whereas predict_proba() defaults to best_iteration+1 when
+    # early stopping triggered - the plots must reflect the model that stage1 actually applies
+    n_rounds = bdt.get_booster().num_boosted_rounds()
+    try:
+        best_plus_one = bdt.best_iteration + 1
+    except AttributeError:  # no early stopping
+        best_plus_one = None
+    print(f"--->Evaluating BDT model with all {n_rounds} boosted rounds "
+          f"(predict_proba default best_iteration+1 = {best_plus_one})")
+    df["BDTscore"] = bdt.predict_proba(X, iteration_range=(0, n_rounds)).tolist()
     df["BDTscore"] = df["BDTscore"].apply(lambda x: x[1])
     return df
 

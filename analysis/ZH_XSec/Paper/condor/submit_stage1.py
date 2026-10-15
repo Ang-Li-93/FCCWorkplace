@@ -16,6 +16,17 @@ Usage:
   python submit_stage1.py S240/mumu/stage1_analysis_ntuples.py [--dry-run] [--queue tomorrow] [--max-files-per-job N]
   python submit_stage1.py S240/qq/stage1_training_ntuples.py --stage MVA_ntuples
 
+A process whose sample dir lists no files (xrdfs failure / timeout, empty or nonexistent
+dir) aborts the submission before anything is written; --allow-missing skips it instead.
+
+--stage names the output stage dir; when the script itself sets a (relative) outputDir
+that differs from it the submission is refused (it would clobber another stage's chunks)
+unless --stage-override is given, which is the way to write a variant production into a
+NEW stage dir (e.g. --stage BDT_analysis_samples_cernbdt --stage-override). If
+FCC_MODELS_BASE is set in the submitting shell it is exported into every job wrapper, so
+the stage1 script's site_config.bdt_model() picks the BDT models from that tree (e.g.
+models_backup_2026-09-29 for the original CERN-trained leptonic models).
+
 Output: <SDCC_BASE>/S<ecm>/<flavor>/BDT_analysis_samples/<process>/chunk_<i>.root
 (ecm/flavor are inferred from the script path .../Paper/S<ecm>/<flavor>/...).
 """
@@ -28,7 +39,8 @@ import sys
 LOCAL_DIR   = "/gpfs/mnt/gpfs01/usfcc/ali3/FCCWorkplace"
 FCCANA_DIR  = f"{LOCAL_DIR}/FCCAnalyses-winter2023"
 KEY4HEP     = "/cvmfs/sw.hsf.org/key4hep/setup.sh -r 2024-03-10"
-SDCC_BASE   = "/gpfs/mnt/gpfs01/usfcc/ali3/storage/ZH_XSec_Paper"
+# storage base; FCC_SUBMIT_BASE=<dir> overrides it (tests, dry runs outside the production tree)
+SDCC_BASE   = os.environ.get("FCC_SUBMIT_BASE", "/gpfs/mnt/gpfs01/usfcc/ali3/storage/ZH_XSec_Paper")
 XRD         = "root://eospublic.cern.ch/"
 SAMPLE_BASE = "/eos/experiment/fcc/ee/generation/DelphesEvents/winter2023/IDEA"
 ACCT_GROUP  = "group_usfcc"
@@ -88,6 +100,11 @@ def main():
                     help="cap files per job (overrides processList chunks if smaller)")
     ap.add_argument("--stage", default="BDT_analysis_samples",
                     help="output stage directory name (e.g. MVA_ntuples for the training treemaker)")
+    ap.add_argument("--allow-missing", action="store_true",
+                    help="skip processes without input files instead of aborting")
+    ap.add_argument("--stage-override", action="store_true",
+                    help="accept a --stage that differs from the script's own outputDir "
+                         "(variant production into a NEW stage dir)")
     args = ap.parse_args()
 
     script = os.path.abspath(args.script)
@@ -100,8 +117,16 @@ def main():
     # the script's own (relative) outputDir doubles as the stage tag: refuse a mismatch,
     # which would clobber another stage's chunks (e.g. training trees over analysis ntuples)
     if script_outdir and "/" not in script_outdir.strip("/") and script_outdir != args.stage:
-        sys.exit(f"ERROR: script outputDir '{script_outdir}' != --stage '{args.stage}'. "
-                 f"Pass --stage {script_outdir}.")
+        if not args.stage_override:
+            sys.exit(f"ERROR: script outputDir '{script_outdir}' != --stage '{args.stage}'. "
+                     f"Pass --stage {script_outdir}, or --stage-override to write a variant "
+                     f"production into the new stage dir '{args.stage}'.")
+        print(f"NOTE (--stage-override): script outputDir '{script_outdir}' != --stage '{args.stage}'")
+
+    # optional BDT-model tree override, forwarded to the jobs (site_config.bdt_model())
+    models_base = os.environ.get("FCC_MODELS_BASE")
+    if models_base and not os.path.isdir(models_base):
+        sys.exit(f"ERROR: FCC_MODELS_BASE={models_base} is not a directory")
 
     # follow the script's campaign (e.g. winter2023_training for the leptonic treemakers)
     sample_base = SAMPLE_BASE
@@ -123,21 +148,36 @@ def main():
 
     out_base = f"{SDCC_BASE}/S{ecm}/{flavor}/{args.stage}"
     job_dir  = f"{SDCC_BASE}/S{ecm}/{flavor}/condor/{args.stage}"
-    os.makedirs(job_dir, exist_ok=True)
-    os.makedirs(out_base, exist_ok=True)
 
     print(f"script   : {script}")
     print(f"ecm/flav : {ecm} / {flavor}")
     print(f"prodTag  : {prodtag} (samples from {sample_base})")
     print(f"output   : {out_base}")
     print(f"processes: {len(plist)}")
+    if models_base:
+        print(f"models   : FCC_MODELS_BASE={models_base} (exported into every wrapper)")
+
+    # list the inputs of every process BEFORE writing anything: a process without files
+    # (xrdfs failure / timeout, empty or nonexistent sample dir) would otherwise be skipped
+    # silently and leave a hole in the stage2 templates
+    proc_files = {proc: list_files(proc, sample_base) for proc in plist}
+    missing = [proc for proc, files in proc_files.items() if not files]
+    if missing:
+        msg = (f"{len(missing)} of {len(plist)} processes have no input files under "
+               f"{sample_base}:\n  " + "\n  ".join(missing))
+        if not args.allow_missing:
+            sys.exit(f"ERROR: {msg}\nNothing written. Fix the sample list / xrootd access and "
+                     f"resubmit, or pass --allow-missing to skip these processes.")
+        print(f"WARNING (--allow-missing): {msg}\n  -> skipped")
+    os.makedirs(job_dir, exist_ok=True)
+    os.makedirs(out_base, exist_ok=True)
 
     wrappers = []
     total_jobs = 0
     for proc, cfg in plist.items():
-        files = list_files(proc, sample_base)
+        files = proc_files[proc]
         if not files:
-            print(f"  {proc}: NO FILES — skipped")
+            print(f"  {proc}: NO FILES — skipped (--allow-missing)")
             continue
         frac = cfg.get("fraction", 1.0) if isinstance(cfg, dict) else 1.0
         if frac < 1.0:  # emulate the 'fraction' processList option: take the first N files
@@ -160,6 +200,8 @@ def main():
                 w.write(f"source {KEY4HEP}\n")
                 w.write(f"source {FCCANA_DIR}/setup.sh\n")
                 w.write(f"export FCCANA_PROCESS={proc}\n")  # process-dependent MC filters (qq channel)
+                if models_base:
+                    w.write(f"export FCC_MODELS_BASE={models_base}\n")  # BDT-model tree (site_config.bdt_model)
                 w.write(f"cd {LOCAL_DIR}\n")
                 w.write(f"fccanalysis run {script} \\\n")
                 w.write(f"  --output {out_file} \\\n")

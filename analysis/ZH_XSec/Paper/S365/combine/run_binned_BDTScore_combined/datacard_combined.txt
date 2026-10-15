@@ -19,6 +19,6 @@ ELSCALE                 shape     -           -           1.0         -
 MUSCALE                 shape     1.0         -           -           -         
 SQRTS                   shape     1.0         -           1.0         -         
 background_norm  rateParam mumu background 1 
-bkg_norm      rateParam ee background 1 
+bkg_ee_norm   rateParam ee background 1 
 mumu autoMCStats 0 1 1
 ee autoMCStats 0 1 1

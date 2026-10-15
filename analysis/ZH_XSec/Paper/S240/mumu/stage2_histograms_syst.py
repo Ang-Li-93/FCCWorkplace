@@ -1,7 +1,7 @@
 #python examples/FCCee/higgs/mH-recoil/mumu/finalSel.py
 #Input directory where the files produced at the pre-selection level are
 # site-aware paths: SDCC GPFS or original lxplus /eos (see Paper/site_config.py)
-import os, sys
+import glob, os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 from site_config import output_dir as _sdir
 inputDir = _sdir(240, "mumu", "BDT_analysis_samples")
@@ -46,6 +46,25 @@ processList = {
               }
 ###Add MySample_p8_ee_ZH_ecm240 as it is not an offical process
 
+# Exclusive ZH samples (arXiv:2512.21290 Sec 5.2: the signal template is the sum of ALL ZH
+# final states passing the selection; Sec 7.2: per-H-decay templates for the BR bias test),
+# i.e. every wzp6_ee_{Z}H_{H}_ecm240 of stage1_analysis_ntuples.py except the fully invisible
+# nunuH_Hinv. Guarded like the qq stage2: only the processes whose stage1 output exists are
+# added, so an incomplete stage1 production does not abort the histogram step (the inclusive
+# processes above stay unconditional). The histograms are normalized to xsec*lumi by
+# 'fccanalysis final', so the per-final-state templates can simply be summed downstream.
+_z_decays = ["ee", "mumu", "tautau", "nunu", "qq", "ss", "cc", "bb"]
+_h_decays = ["Hbb", "Hcc", "Hss", "Hgg", "Haa", "HZa", "HWW", "HZZ", "Hmumu", "Htautau", "Hinv"]
+_excl_procs = [f"wzp6_ee_{_z}H_{_h}_ecm240" for _z in _z_decays for _h in _h_decays
+               if not (_z == "nunu" and _h == "Hinv")]
+_excl_found = [p for p in _excl_procs if glob.glob(f"{inputDir}/{p}/chunk*.root")
+               or os.path.isfile(f"{inputDir}/{p}.root")]
+_excl_missing = [p for p in _excl_procs if p not in _excl_found]
+if _excl_missing:
+    print(f"WARNING: no stage1 output for {len(_excl_missing)} of {len(_excl_procs)} exclusive ZH "
+          f"processes, skipped: {_excl_missing}")
+processList.update(_excl_found)
+
 #Number of CPUs to use
 nCPUS = 8
 #produces ROOT TTrees, default is False
@@ -61,9 +80,21 @@ cutList = { "sel0":"return true;",
             "sel_Baseline_wide_scaledw":"zll_m_scaledw > 86 && zll_m_scaledw < 96 && zll_recoil_m_scaledw > 100 && zll_recoil_m_scaledw < 150 && zll_p_scaledw > 20 && zll_p_scaledw < 70",
             "sel_Baseline_wide_sqrtsup":"zll_m > 86 && zll_m < 96 && zll_recoil_m_sqrtsup > 100 && zll_recoil_m_sqrtsup < 150 && zll_p > 20 && zll_p < 70",
             "sel_Baseline_wide_sqrtsdw":"zll_m > 86 && zll_m < 96 && zll_recoil_m_sqrtsdw > 100 && zll_recoil_m_sqrtsdw < 150 && zll_p > 20 && zll_p < 70",
-            # paper (arXiv:2512.21290) BDT regions: recoil fitted in low/high score
-            "sel_Baseline_loBDT":"zll_m > 86 && zll_m < 96 && zll_recoil_m > 100 && zll_recoil_m < 150 && zll_p > 20 && BDTscore < 0.83",
-            "sel_Baseline_hiBDT":"zll_m > 86 && zll_m < 96 && zll_recoil_m > 100 && zll_recoil_m < 150 && zll_p > 20 && BDTscore >= 0.83",
+            # paper (arXiv:2512.21290) BDT regions: recoil mass fitted in 100-150 GeV in two regions of
+            # the BDT score (Sec 5.2: boundary 0.83 for mumu at 240 GeV); the Sec 4.2 selection incl.
+            # 20 < p_ll < 70 GeV applies in both regions (also required for orthogonality with the
+            # qq channel's lepton veto). Lepton-scale / sqrt(s) variants follow the *_scaleup/_scaledw/
+            # _sqrtsup/_sqrtsdw naming used by the combine scripts.
+            "sel_Baseline_loBDT":"zll_m > 86 && zll_m < 96 && zll_recoil_m > 100 && zll_recoil_m < 150 && zll_p > 20 && zll_p < 70 && BDTscore < 0.83",
+            "sel_Baseline_hiBDT":"zll_m > 86 && zll_m < 96 && zll_recoil_m > 100 && zll_recoil_m < 150 && zll_p > 20 && zll_p < 70 && BDTscore >= 0.83",
+            "sel_Baseline_loBDT_scaleup":"zll_m_scaleup > 86 && zll_m_scaleup < 96 && zll_recoil_m_scaleup > 100 && zll_recoil_m_scaleup < 150 && zll_p_scaleup > 20 && zll_p_scaleup < 70 && BDTscore_scaleup < 0.83",
+            "sel_Baseline_hiBDT_scaleup":"zll_m_scaleup > 86 && zll_m_scaleup < 96 && zll_recoil_m_scaleup > 100 && zll_recoil_m_scaleup < 150 && zll_p_scaleup > 20 && zll_p_scaleup < 70 && BDTscore_scaleup >= 0.83",
+            "sel_Baseline_loBDT_scaledw":"zll_m_scaledw > 86 && zll_m_scaledw < 96 && zll_recoil_m_scaledw > 100 && zll_recoil_m_scaledw < 150 && zll_p_scaledw > 20 && zll_p_scaledw < 70 && BDTscore_scaledw < 0.83",
+            "sel_Baseline_hiBDT_scaledw":"zll_m_scaledw > 86 && zll_m_scaledw < 96 && zll_recoil_m_scaledw > 100 && zll_recoil_m_scaledw < 150 && zll_p_scaledw > 20 && zll_p_scaledw < 70 && BDTscore_scaledw >= 0.83",
+            "sel_Baseline_loBDT_sqrtsup":"zll_m > 86 && zll_m < 96 && zll_recoil_m_sqrtsup > 100 && zll_recoil_m_sqrtsup < 150 && zll_p > 20 && zll_p < 70 && BDTscore < 0.83",
+            "sel_Baseline_hiBDT_sqrtsup":"zll_m > 86 && zll_m < 96 && zll_recoil_m_sqrtsup > 100 && zll_recoil_m_sqrtsup < 150 && zll_p > 20 && zll_p < 70 && BDTscore >= 0.83",
+            "sel_Baseline_loBDT_sqrtsdw":"zll_m > 86 && zll_m < 96 && zll_recoil_m_sqrtsdw > 100 && zll_recoil_m_sqrtsdw < 150 && zll_p > 20 && zll_p < 70 && BDTscore < 0.83",
+            "sel_Baseline_hiBDT_sqrtsdw":"zll_m > 86 && zll_m < 96 && zll_recoil_m_sqrtsdw > 100 && zll_recoil_m_sqrtsdw < 150 && zll_p > 20 && zll_p < 70 && BDTscore >= 0.83",
             "sel_Baseline_no_costhetamiss":"zll_m  > 86 && zll_m  < 96  && zll_recoil_m > 120 &&zll_recoil_m  <140 && zll_p  > 20 && zll_p  <70", 
             "sel_Baseline_no_costhetamiss_scaleup":"zll_m_scaleup  > 86 && zll_m_scaleup  < 96  && zll_recoil_m_scaleup > 120 &&zll_recoil_m_scaleup  <140 && zll_p_scaleup  > 20 && zll_p_scaleup  <70", 
             "sel_Baseline_no_costhetamiss_scaledw":"zll_m_scaledw  > 86 && zll_m_scaledw  < 96  && zll_recoil_m_scaledw > 120 &&zll_recoil_m_scaledw  <140 && zll_p_scaledw  > 20 && zll_p_scaledw  <70",

@@ -10,8 +10,11 @@ Adapted from jeyserma/FCCPhysics h_zh_hadronic.py to the Paper workflow:
       * jet momentum scale +-1e-5 (zqq_m/p/recoil_m_scaleup/scaledw); NB the down
         variation correctly uses -1e-5 (the leptonic scripts use +1e-5 for both),
       * sqrt(s) +-2 MeV (zqq_recoil_m_sqrtsup/sqrtsdw).
-    No BES / mH-shifted samples exist in winter2023 for hadronic Z decays, so
-    sample-based systematics are not available in this channel.
+    1% BES samples exist for all Z decays (inclusive in H decays:
+    wzp6_ee_{z}H_BES-{higher,lower}-1pc_ecm{240,365}; the hadronic-Z/tautau/nunu
+    sets were produced on 2026-09-07, after the July campaign); used for the qq BES
+    nuisance since 2026-09 (listed in stage1_analysis_ntuples.py, same graph, no
+    MC-truth filter applies to them). No mH-shifted samples for hadronic Z decays.
 
 Process-dependent MC-truth filters (HZZ->invisible removal, WW->leptonic removal)
 follow the process name from the FCCANA_PROCESS environment variable, exported by
