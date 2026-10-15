@@ -61,6 +61,35 @@ The `-p` value must exactly match (a) a registered key in
   flavour-violating decay to **bs**. Self-contained (no UFO). **Recommended.**
 - `wzp6_ee_mumuH_Hbs_ecm240` — ME-level **bs** via the `THDM_QFV` UFO.
 
+### H→rare-decay sample set, μμH and ννH (all 240 GeV, IDEA)
+
+| Higgs decay | Z→μμ card | Z→νν card | Recipe |
+|---|---|---|---|
+| bs, bd, sd, cu | `wzp6_ee_mumuH_H<qq'>_W4p1MeV_ecm240` | `wzp6_ee_nunuH_H<qq'>_W4p1MeV_ecm240` | SM on-shell `ee→ZH`, Pythia6 decays H via channels 212/214 with `KFDP` redefined to `q q'~` (50/50 conjugates), SM width 4.143 MeV |
+| uu, dd | `wzp6_ee_mumuH_H<qq>_ecm240` | `wzp6_ee_nunuH_H<qq>_ecm240` (stock winter2023 card) | clone of the stock `Hbb` card with only the active `MDME` channel flipped (211 = uu, 210 = dd) |
+
+The ννH cards were derived from the μμH ones on 2026-09-15 by changing only the
+process line (`e1, E1 => nu, nubar, H`, `nu = nue:numu:nutau`) — the PYGIVE
+decay block is identical. The `Huu`/`Hdd` ννH cards already existed upstream.
+WHIZARD integral for `ee→ννH` (all three flavours, incl. WW fusion) is
+46.17 ± 0.02 fb, in agreement with the registered 46.191 fb for
+`wzp6_ee_nunuH_ecm240` (μμH: 6.763 fb). The four ννH FCNC entries in
+`param_FCCee.py` carry the same placeholder xsec (1.0) as their μμH twins.
+Truth check on one 10k-event production file per process: daughters of the
+last PDG-25 particle are the intended `q q'~` pair, 50/50 conjugates
+(bs 5029/4971, bd 4942/5058, sd 5082/4918, cu 5026/4974; uu and dd 10000/10000).
+
+**Status (2026-09-15): full chain DONE for all six ννH processes** — 10×10k
+stdhep (all `gzip -t` clean, 10000 events/file, `njobbad=0`) and 10×10k
+Delphes IDEA reco (`events_*.root`, 91–100 MB, 10000 entries each, no
+segfault/`already set up` signatures, reco `--check` `njobbad=0`). Outputs in
+`MAPS_storage/generation/{stdhep,DelphesEvents/winter2023/IDEA}/<proc>/`.
+Published to EOS 2026-09-15 (Kerberos `lia@CERN.CH`, 6 parallel `xrdcp`
+streams, every file size-verified against gpfs):
+`root://eospublic.cern.ch//eos/experiment/fcc/ee/analyses_storage/Higgs_and_TOP/HiggsFCNC/<proc>/`
+— reco `events_*.root` flat, generator files under `<proc>/stdhep/`, same
+layout as the μμH set.
+
 ---
 
 ## SDCC adaptations baked into this repo
@@ -120,6 +149,25 @@ run on SDCC (all already committed):
    was unset → podio `vector<podio::ObjectID>` dictionaries missing → corrupt
    branches → segfault (but condor still reports exit 0!). Fix = `getenv = False`
    so the worker starts clean and the stack setup actually runs.
+
+6. **HTCondor ≥ 25: every good submit looked like a failure and was re-sent
+   10×.** `condor_submit` 25.13 prints
+   `To monitor your job(s), run: condor_watch_q -clusters N` on **stderr** after
+   a *successful* submit. `EventProducer/common/utils.py::SubmitToCondor` used
+   "stderr empty" as its success test, so it printed `ERROR submitting, will
+   retry` ten times per process and actually submitted **10 identical clusters**
+   (same uids, same seeds). Fixed 2026-09-15: success = `submitted to cluster`
+   on stdout. Why the duplicates are not harmless: jobs have no `initialdir`, so
+   they run in `job<uid>_<proc>/` under the **submit cwd on gpfs** (the repo
+   root), and the ten copies of a uid share that directory — they overwrite each
+   other's `proc.m1.vg` grids / `proc.stdhep` (`FATAL ERROR: Simulate: reading
+   integration grids from file 'proc.m1.vg' failed`). If you ever see the
+   retry pattern with jobs appearing anyway: let/make the queue drain, then
+   delete the process's stdhep outputs, its `FCCDicts/yaml/.../stdhep/<tag>/<proc>/`
+   yamls, `BatchOutputs/FCCee/stdhep/<proc>/` and the `job*_<proc>` dirs under
+   the repo root, and resubmit once. (The `job*_<proc>` dirs are never removed
+   by the job script; clean them by hand.)
+
 
 ---
 
