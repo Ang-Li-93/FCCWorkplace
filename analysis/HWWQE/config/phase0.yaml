@@ -1,0 +1,50 @@
+# Phase 0 toy studies (PLAN.md Sec. 4): toy closure and ideal statistical reach.
+# Paths are relative to the analysis root. Physics constants: config/constants.yaml.
+seed: 20261015
+output_dir: outputs/phase0          # git-ignored (pseudo-experiment results)
+figure_dir: reports/figures/gate0
+
+i3:
+  n_starts_reference: 64   # optimisation of the expected (true) states
+  n_starts_toy: 48         # random starts per pseudo-experiment besides the warm start (4 misses the maximum in 1-12% of toys)
+
+closure:
+  # SM at fixed off-shell mass M* (on-shell partner at m_W), the spectrum average,
+  # and two separable null states (decohered SM and 1/9) to show estimator biases.
+  states:
+    - {name: sm_m10, kind: sm_fixed, mstar: 10.0}
+    - {name: sm_m20, kind: sm_fixed, mstar: 20.0}
+    - {name: sm_m30, kind: sm_fixed, mstar: 30.0}
+    - {name: sm_m40, kind: sm_fixed, mstar: 40.0}
+    - {name: sm_spectrum, kind: sm_spectrum}
+    - {name: decohered_m30, kind: decohered, mstar: 30.0}
+    - {name: isotropic, kind: isotropic}
+  n_events: [10000, 30000, 100000, 300000, 1000000]
+  n_pseudo: 200
+  pseudo_per_job: 50
+
+reach:
+  # Indicative pre-selection yields at 10.8 ab-1 before Z branching (PLAN.md Sec. 4);
+  # to be verified against sample metadata in Phase 1.
+  yields_hww: {lvlv: 21000.0, lvqq: 130000.0, qqqq: 210000.0}
+  z_branching: {ll: 0.067, nunu: 0.20, qq: 0.70}
+  # hadronic: legs with a down/up-type analyser ambiguity (mistag rate w applies there).
+  # In lvqq the hadronic W is the W+ or the W- with equal probability (lepton charge known).
+  # qqqq assumes the W charges are known (charge identification is a Phase 4 topic).
+  categories:
+    A:    {hww: lvqq, z: ll,   hadronic: one}
+    B:    {hww: lvqq, z: qq,   hadronic: one}
+    C:    {hww: qqqq, z: nunu, hadronic: both}
+    D_ll: {hww: lvlv, z: ll,   hadronic: none}
+    D_qq: {hww: lvlv, z: qq,   hadronic: none}
+    C_qq: {hww: qqqq, z: qq,   hadronic: both, optional: true}   # PLAN: only after C
+  mistag_rates: [0.0, 0.1, 0.2, 0.3, 0.5]
+  n_pseudo: 1000
+  pseudo_per_job: 100
+  mstar_cuts: [0.0, 10.0, 20.0, 30.0]   # asymptotic scan of a lower cut on M* = min(m_W+, m_W-)
+
+batch:
+  # SDCC HTCondor (pattern of analysis/ZH_XSec/Paper/condor/submit_stage1.py and EventProducer)
+  accounting_group: group_usfcc
+  request_memory: 3000
+  requirements: '( (OpSysAndVer =?= "AlmaLinux9") && (TARGET.has_avx2 =?= True) )'

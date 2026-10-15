@@ -1,0 +1,14 @@
+# Physical constants used before any MC is analysed (Phase 0 toys and the analytic
+# SM state). Source: Particle Data Group, S. Navas et al., Phys. Rev. D 110 (2024) 030001.
+# Phase 1 (truth validation) must use the masses/widths actually set in the generator
+# of each sample instead of these values; record them in samples.yaml.
+m_H: 125.20        # GeV
+m_W: 80.3692       # GeV
+Gamma_W: 2.085     # GeV
+m_Z: 91.1880       # GeV
+Gamma_Z: 2.4955    # GeV
+sqrt_s: 240.0      # GeV, FCC-ee ZH run
+
+# Lower edge used when integrating/sampling the off-shell W* mass spectrum (GeV).
+# The H -> W W* density vanishes linearly at M* -> 0, so the excluded fraction is tiny.
+mstar_min: 0.5

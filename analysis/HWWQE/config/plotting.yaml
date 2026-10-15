@@ -1,0 +1,6 @@
+# Plot labels (PLAN.md rule 8). Toy studies carry a label that does not claim a
+# detector simulation; MC-based plots use the Delphes IDEA label verbatim.
+label_mc: "FCC-ee simulation (Delphes IDEA), $\\sqrt{s}$ = 240 GeV"
+label_toy: "FCC-ee toy study (no detector simulation), $\\sqrt{s}$ = 240 GeV"
+formats: [pdf, png]
+dpi: 150
