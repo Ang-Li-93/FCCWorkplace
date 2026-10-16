@@ -1,0 +1,16 @@
+# Phase 1 (PLAN.md Sec. 5): truth validation of the central winter2023 signal at 240 GeV,
+# l nu q q focus (channels A and B). Samples: config/samples.yaml.
+output_dir: outputs/phase1            # git-ignored
+figure_dir: reports/figures/gate1
+stage1_script: stage1/truth_hww.py
+stage1_setup: setup_hbs.sh            # winter2023 stack (FCCAnalyses-winter2023), see LOG.md
+mstar_bins: [0.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0, 46.0]   # GeV, M* = min(m_W+, m_W-)
+i3_n_starts: 48
+# Agreement criterion (PLAN Sec. 5.2, outcome A): chi^2 p-value of the 80 coefficients (and of the
+# 18 rotation-invariant combinations) against the analytic state above this value in every bin.
+p_value_threshold: 0.001
+
+batch:
+  accounting_group: group_usfcc
+  request_memory: 3000
+  requirements: '( (OpSysAndVer =?= "AlmaLinux9") && (TARGET.has_avx2 =?= True) )'

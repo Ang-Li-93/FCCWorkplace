@@ -15,16 +15,17 @@ REPO_ROOT = ANALYSIS_ROOT.parents[1]
 sys.path.insert(0, str(ANALYSIS_ROOT))
 
 
-def write_jobs(job_dir, commands, batch_cfg):
+def write_jobs(job_dir, commands, batch_cfg, setup="setup.sh"):
     """Write one wrapper per command plus ``jobs.sub``; return the submit file path.
-    Commands run from the analysis root after sourcing the repository setup.sh."""
+    Commands run from the analysis root after sourcing ``setup`` from the repository root
+    (setup.sh: Key4hep 2026-04-08 for qtomo; setup_hbs.sh: winter2023 stack for stage1)."""
     job_dir = Path(job_dir).resolve()
     (job_dir / "log").mkdir(parents=True, exist_ok=True)
     wrappers = []
     for i, cmd in enumerate(commands):
         wrapper = job_dir / f"job_{i:04d}.sh"
         wrapper.write_text("#!/bin/bash\nset -e\n"
-                           f"source {REPO_ROOT}/setup.sh >/dev/null 2>&1\n"
+                           f"source {REPO_ROOT}/{setup} >/dev/null 2>&1\n"
                            f"cd {ANALYSIS_ROOT}\n{cmd}\n")
         wrapper.chmod(0o755)
         wrappers.append(str(wrapper))
