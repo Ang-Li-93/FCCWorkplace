@@ -1,0 +1,74 @@
+! HWWQE dedicated samples S1 / S2 / S3 (PLAN.md Sec. 5.3): Pythia8 parton shower and
+! hadronisation of the WHIZARD partonic LHEF after gen/randomise_w_decays.py, run by
+! DelphesPythia8_EDM4HEP with the IDEA cards (gen/run_hwwqe_job.sh).
+!
+! Derived from the official winter2023 LHE card FCC-config/winter2023/FCCee/Generator/Pythia8/
+! p8_ee_Hww_ecm240.cmd: identical settings except
+!   - Beams:LHEF = events.lhe (name used by the job script);
+!   - the '25:onMode / 25:onIfAny' block is dropped: the LHEF already carries the
+!     H -> W+ W- -> 4f decay chain as resonances (status 2), which Pythia8 does not re-decay;
+!   - decays restricted to the cylinder of the official 240 GeV Pythia8 cards (e.g.
+!     p8_ee_WW_ecm240.cmd) = MSTJ(22)=4, PARJ(73)=2250, PARJ(74)=2500 of the WHIZARD+PYTHIA6
+!     production cards;
+!   - Beams:sigmaTime = PARP(154) = 1.937 mm/c of the WHIZARD+PYTHIA6 production cards;
+!   - TimeShower:QEDshowerByOther = off (no photon radiation off the W bosons, see section 4).
+! The job appends Main:numberOfEvents and Random:seed.
+!
+! NOTE: the central winter2023 signal is showered by PYTHIA6 inside WHIZARD.  WHIZARD 3.1.5
+! cannot shower an external (modified) LHEF ('rescan' with ?update_event fails with
+! "WHIZARD BUG: HEPEVT/HEPEUP: event incomplete"), hence Pythia8 here; S1 is produced
+! through the same chain so that S1 / S2 / S3 share the shower model (gen/README.md).
+
+! 1) Settings that will be used in a main program.
+Random:setSeed = on
+Main:timesAllowErrors = 5          ! how many aborts before run stops
+
+! 2) Settings related to output in init(), next() and stat() functions.
+Init:showChangedSettings = on      ! list changed settings
+Init:showAllSettings = off         ! list all settings
+Init:showChangedParticleData = on  ! list changed particle data
+Init:showAllParticleData = off     ! list all particle data
+Next:numberCount = 1000            ! print message every n events
+Next:numberShowLHA = 1             ! print LHA information n times
+Next:numberShowInfo = 1            ! print event information n times
+Next:numberShowProcess = 1         ! print process record n times
+Next:numberShowEvent = 0           ! print event record n times
+Stat:showPartonLevel = off         ! additional statistics on MPI
+
+! 3) Tell Pythia that LHEF input is used
+Beams:frameType = 4
+Beams:setProductionScalesFromLHEF = off
+Beams:allowMomentumSpread  = off
+Beams:LHEF = events.lhe
+
+! Vertex smearing (official card)
+Beams:allowVertexSpread = on
+Beams:sigmaVertexX = 9.70e-3   !  13.7 mum / sqrt2
+Beams:sigmaVertexY = 25.5E-6   !  36.1 nm / sqrt2
+Beams:sigmaVertexZ = 0.64      !  0.64 mm
+Beams:sigmaTime = 1.937        !  mm/c, PARP(154) of the WHIZARD+PYTHIA6 production cards
+
+! 4) Settings for the event generation process in the Pythia8 library.
+PartonLevel:ISR = off               ! ISR photons come from WHIZARD (structure function + ISR handler)
+PartonLevel:FSR = on                ! final-state radiation
+
+! No photon radiation off the W bosons in the reference samples S1 / S2 / S3.  Pythia 8.310,
+! share/Pythia8/xmldoc/TimelikeShowers.xml ("Switch off branching types"):
+!   TimeShower:QEDshowerByOther (default on): "Allow charged resonances to radiate photons, i.e.
+!   branchings q~ -> q~ gamma; on/off = true/false. This will also allow the W boson to radiate."
+!   (q~ = squark in the xmldoc example)
+! The central winter2023 signal (PYTHIA6) has no W radiation: W = analyser + partner and
+! m(W+ W-) = m_H in all 5.3M events.  With the default (on), in the 2026-10-15 S1 test (2000 Z->mumu
+! events) a W radiated photons in 12.3 +- 0.7 % of the events, the decaying W copies differed from
+! the LHEF W bosons by more than 1 MeV in 4.2 +- 0.4 % (3-4 % in all four tests, up to 37 GeV) and
+! m(W+ + W-) fell below m_H (down to 104 GeV).  With 'off' no W radiates (2026-10-16 tests, gen/README.md).
+! 'on' is a systematic variation, not the reference.
+TimeShower:QEDshowerByOther = off
+
+Check:epTolErr = 1e-1               ! default 1e-4, necessary to allow BES
+LesHouches:matchInOut = off
+
+! 5) Decays of long-lived particles only inside the detector volume (official 240 GeV Pythia8 cards)
+ParticleDecays:limitCylinder = on
+ParticleDecays:xyMax = 2250.
+ParticleDecays:zMax = 2500.

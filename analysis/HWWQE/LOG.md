@@ -155,3 +155,55 @@ B, C, D later (C's truth validation already done). Channel-A facts: recorded-H s
 of Z→ee and Z→μμ events, |Δp_H| median 0.02 GeV, 90 % < 0.9 GeV, 1 % > 5.7 GeV (small);
 A-only truth validation 233,897 ℓνqq events χ²/ndf = 72.1/80 (p = 0.72), all M* bins p ≥ 0.21,
 I₃ fixed-setting 2.684 ± 0.025 vs 2.694. GATE 1 report to be written for channel A.
+
+**Phase 1 verification workflow (5 investigators + adversarial cross-check; results preserved in
+outputs/phase1/workflow_results/, scripts analysis/phase1_validation.py, phase1_kinematics.py).**
+- Extraction: an independent Python walk of the record matches the stage1 slots in all 200k events
+  of one Z→μμ and one Z→qq file (0 mismatches); independent angle code agrees with qtomo.frames.
+- Calibration: χ² test calibrated (20 and 100 subsample splits: uniform p-values; whitened
+  residuals std 1.003 ± 0.008). Reach (ℓνqq, one-parameter, 95 % CL): admixture ε ≈ 1.4–1.7×10⁻³
+  for decohered / 𝟙/9 / CP-odd; measured ε̂ consistent with 0, upper limits 1.9–2.5×10⁻³ (channel A
+  alone σ_ε ≈ 2×10⁻³). Subsets consistent (e/μ, cs/ud, W⁺/W⁻ leptonic, A/B samples, τ modes;
+  492 tests, smallest p 0.0013 as expected). Largest feature: Im ρ₊₋,₋₊ (h₄₅ − h₅₄) −3.1σ for
+  W⁺-leptonic events only, read as a fluctuation (P- and T-even generator). The generator omits
+  fermion-mass effects (Pythia6 massless correlation; excluded > 7σ for τ and s analysers at low
+  M*): negligible for channel A (≈ 0.02 χ² units at data statistics).
+- Kinematics: the 12 GeV floor is Pythia6's default CKIN(45) = CKIN(47) = 12 GeV (pydata.f, pyresd.f,
+  pyofsh.f of Pythia 6.427, verified in source and by a direct decay test). f(M* < 12 GeV) = 5.79 %
+  (PDG) – 5.89 % (generator parameters): channel A 548 of 9463 ℓνqq events (10.8 ab⁻¹); procDict
+  σ×BR overstates M* ≥ 12 GeV yields by ≈ 6.2 %. Truncated SM reference: I₃ 2.694, 𝒞₂ 1.028, h₄₄ 0.1043
+  (full spectrum 2.643, 0.952, 0.0988). Generator W line shape: m_W = 80.449 ± 0.001, Γ_W = 2.077 ±
+  0.001 GeV (Pythia6 80.45 / 2.0764), not PDG. Higgs frame for channel A: recoil against the
+  post-shower Z system smeared only by ISR (mean photon energy 1.8 GeV, tails) and BES (σ(√s′) =
+  0.31 GeV): core ≈ 1–2 mrad, tails 8 %, coefficient shifts ≤ 0.14σ (data stat.), ≤ 0.1σ on I₃, 𝒞₂, h₄₄.
+- Sample pages: samples.yaml matches the official pages for all 104 entries; bug: EOS '.sys.v#'
+  version directories leak into the file lists of 7 samples (none in channel A signal; Zqq, ZZ).
+  BR(H→WW) in the procDict = 0.2152 (YR4 at 125.09 GeV) while the generator uses m_H = 125.0.
+  Central production stack: key4hep 2022-12-23 (Delphes 3.5.1pre05).
+- Generation (S2/S3/S4 feasibility, channel A first): WHIZARD's isotropic/diagonal switches act only
+  on on-shell factorised decays and fail for H→WW* (tested). Route (b): WHIZARD ℓℓH with the full
+  H→ℓνqq′ matrix element, then redraw each W decay direction in its rest frame (iso: exactly 𝟙/9; diag:
+  decohered SM; copy: S1), then Pythia8 + Delphes IDEA. Tests (4000 events, generator level, channel A):
+  S1 vs SM p = 0.75, S2 vs 𝟙/9 p = 0.90, S3 vs decohered p = 0.57, S2 reweighted vs S1 p = 0.93;
+  end-to-end through Delphes and stage1 OK; M* < 12 GeV present (6.3 ± 0.4 %). Cost for channel A at
+  10× data: ≈ 1.1 CPU-h, 0.8 GB per sample type. S4 (6f continuum): integration dominated,
+  ≈ 250–500 CPU-h for the 8 channel-A cards; tested component ≈ 1 % of signal.
+- Cross-check findings to fix before any production: Pythia8 lets W bosons radiate photons by
+  default (TimeShower:QEDshowerByOther) — 3–4 % of test events have first-copy W ≠ analyser +
+  partner; new EDM4hep files use '_Particle_parents/_daughters' branch names; only the μμ channel-A
+  card was run (ee untested); the fixed-settings I₃ is ambiguous (degenerate optimal settings) — use
+  the χ² tests as the primary metric.
+
+## 2026-10-16 — Phase 1 channel-A fixes (finished by hand after the fix workflow stopped)
+The fix workflow stopped (a write of a rewritten analysis/phase1_truth.py was declined, then the
+session ended); phase1_truth.py kept unchanged. Verified and committed the partial edits:
+stage1 handles both MC-relation conventions and takes the decaying W copies (output identical on
+1000 central events); study parameters of phase1_validation.py / phase1_kinematics.py in
+config/phase1.yaml (outputs identical to the previous scripts); the unused 'truth:' block removed.
+samples.yaml: '.sys.v#' EOS version directories removed from the file lists (1619 entries; the 104
+previous entries otherwise unchanged), 102 samples added (exclusive H→ZZ*, BES/mH variations, 4f,
+radiative), channel tags, production stack (key4hep 2022-12-23 per the FCC sample pages), signal
+generator facts and normalisation notes. Pythia8: TimeShower:QEDshowerByOther = off (Pythia 8.310
+xmldoc TimelikeShowers.xml l. 832: "This will also allow the W boson to radiate"). Rule-7 tests of the
+channel-A chain (μμ and ee cards, copy/iso/diag, 1000 events each): all targets reproduced, no W
+radiation, details in gen/README.md.

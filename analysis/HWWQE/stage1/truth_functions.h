@@ -1,6 +1,29 @@
-// Truth summary of e+e- -> Z H, H -> W+ W- events (PLAN.md Sec. 5.2) for the winter2023
-// Whizard + Pythia6 record: incoming beams, H, W+, W-, the W analysers (CONVENTIONS.md Sec. 2)
-// and their partners, and the Z decay products.  Pre-FSR (first-generation) fermions.
+// Truth summary of e+e- -> Z H, H -> W+ W- events (PLAN.md Sec. 5.2, 5.3): incoming beams, H,
+// W+, W-, the W analysers (CONVENTIONS.md Sec. 2) and their partners, and the Z decay products,
+// as indices into the MC collection 'Particle' (used by stage1/truth_hww.py).
+//
+// Two generator records are handled:
+//  - central winter2023 samples (WHIZARD 3.0.3 + PYTHIA6): one H line whose daughters are W+ W-
+//    and a single line per W whose daughters are its two fermions;
+//  - dedicated samples (gen/run_hwwqe_job.sh: WHIZARD 3.1.5 LHEF -> Pythia 8.310): the H and W
+//    resonance lines of the LHEF (status 22).  If Pythia8 lets a W radiate a photon
+//    (TimeShower:QEDshowerByOther, on by default, off in config/generation/p8_lhe_hwwqe_ecm240.cmnd),
+//    the radiating W and its recoiler are followed by copies (status 51/52) and only the last
+//    copy decays.
+//
+// Slots:
+//  - H (slot 2) is the RECORDED H: the H line whose daughters are the W+ W- pair (last copy of the
+//    first H in the record).  It is not the physical H rest frame.  In the winter2023 record it is
+//    the pre-shower documentation copy with the WHIZARD momentum, which differs from W+ + W- when
+//    the shower of the Z decay products rescaled the (Z system, H) pair (LOG.md, 2026-10-15).
+//    The physical H frame is the rest frame of W+ + W- (slots 3 + 4).
+//  - W+, W- (slots 3, 4) are the decaying (last) copies, so that W = analyser + partner always
+//    holds.  In the winter2023 record each W has one copy, so first and last copy coincide.
+//  - analysers and partners (slots 5-8) are the two fermion daughters of the decaying W copy,
+//    i.e. the fermions before their own final-state radiation (first generation).
+//  - Z fermion and antifermion (slots 9, 10) are the fermion siblings of the H (daughters of the
+//    first parent of the first H copy), fermion first.
+// Slots that are not found keep index -1 (PDG 0 in the output).
 #ifndef HWWQE_TRUTH_FUNCTIONS_H
 #define HWWQE_TRUTH_FUNCTIONS_H
 
@@ -64,13 +87,12 @@ inline Vec_i truth_hww_indices(const Vec_mc &mc, const Vec_i &par, const Vec_i &
       if (mc[d].PDG == -24) wm = d;
     }
     if (wp < 0 || wm < 0) continue;
-    idx[HIGGS] = h;
-    idx[WPLUS] = wp;
-    idx[WMINUS] = wm;
+    idx[HIGGS] = h;                        // recorded H (see the header): not the W+ W- rest frame
+    idx[WPLUS] = last_copy(mc, dau, wp);   // decaying W copies: W = analyser + partner
+    idx[WMINUS] = last_copy(mc, dau, wm);
     const int slots[2][3] = {{WPLUS, ANA_P, PARTNER_P}, {WMINUS, ANA_M, PARTNER_M}};
     for (const auto &s : slots) {
-      const int w = last_copy(mc, dau, idx[s[0]]);
-      for (int d : daughters(mc, dau, w)) {
+      for (int d : daughters(mc, dau, idx[s[0]])) {
         if (!is_fermion(mc[d].PDG)) continue;
         const bool ana = (s[0] == WPLUS) ? is_wplus_analyser(mc[d].PDG) : is_wminus_analyser(mc[d].PDG);
         idx[ana ? s[1] : s[2]] = d;
