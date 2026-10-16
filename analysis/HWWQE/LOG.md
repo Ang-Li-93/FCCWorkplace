@@ -207,3 +207,9 @@ generator facts and normalisation notes. Pythia8: TimeShower:QEDshowerByOther = 
 xmldoc TimelikeShowers.xml l. 832: "This will also allow the W boson to radiate"). Rule-7 tests of the
 channel-A chain (μμ and ee cards, copy/iso/diag, 1000 events each): all targets reproduced, no W
 radiation, details in gen/README.md.
+
+**GATE 1 report written (channel A): reports/gate1.md.** Outcome A (central winter2023 signal usable
+in the fiducial region M* ≥ 12 GeV, H frame = W⁺W⁻). Waiting for Ang's decisions: production of S2
+(≥ 25×) and S1 (10–25×) for channel A, the dedicated-chain choices (redraw-before-shower route,
+Pythia8, WHIZARD 3.1.5, 2024-03-10 reco stack), the fiducial definition, and the note to the FCC MC
+contact (draft in the report).
