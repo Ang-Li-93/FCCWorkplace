@@ -1,5 +1,8 @@
 # Beam-Induced Background (BIB) for the MAPS/PixESL study
 
+> Hands-on, step-by-step commands (checked 2026-11-04) are in
+> [BIB_IPC_WALKTHROUGH.md](BIB_IPC_WALKTHROUGH.md); this file keeps the history, audited numbers and quoting rules.
+
 Explainer + run book for the BIB work package of WP1 (FCC-ee pixel hit streams
 for the PixESL readout simulation). Companion to
 [MAPS_PIXESL.md](MAPS_PIXESL.md), which documents the physics (Z→qq) chain.
@@ -212,8 +215,8 @@ lattice and MDI version**, see the MDI-version incident notes):
   radius/pitch detector variants now run on a trusted chain.
 
 - **Upstream, still open:** `documents/BIB_MDI_V2_UPSTREAM_NOTE.md` (Geant4-hang
-  reproducers + central sample ~4% short: 19,673 sim vs 20,501 GuineaPig inputs
-  + request for exact central ddsim config) is **drafted, for Ang to send** to
+  reproducers + central sample ~4% short: 19,673 sim vs 20,501 GuineaPig inputs,
+  plus a request for the exact central ddsim config) is **drafted, for Ang to send** to
   A. Ciarma / J. Eysermans / A. Ilg.
 
 **Group-update slides:** `documents/BIB_LCC_SLIDES_TEXT.md` (11-slide source, same
